@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/Aspire/">
+    <Project Path="Course.Assessment.AppHost/Course.Assessment.AppHost.csproj" />
+    <Project Path="Course.Assessment.ServiceDefaults/Course.Assessment.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/Order/">
+    <Project Path="Course.Assessment.Order.API/Course.Assessment.Order.API.csproj" />
+    <Project Path="Course.Assessment.Order.Application/Course.Assessment.Order.Application.csproj" />
+    <Project Path="Course.Assessment.Order.Domain/Course.Assessment.Order.Domain.csproj" />
+    <Project Path="Course.Assessment.Order.Infrastructure/Course.Assessment.Order.Infrastructure.csproj" Id="01af1d27-489c-4af7-bf3a-94e899027935" />
+  </Folder>
+  <Folder Name="/Payment/">
+    <Project Path="Course.Assessment.Payment.API/Course.Assessment.Payment.API.csproj" />
+    <Project Path="Course.Assessment.Payment.Application/Course.Assessment.Payment.Application.csproj" Id="4093c82f-9676-413e-a2ba-f178c466b824" />
+    <Project Path="Course.Assessment.Payment.Domain/Course.Assessment.Payment.Domain.csproj" Id="5bde6a88-df1b-4ac3-b666-3dae1f1a28e7" />
+    <Project Path="Course.Assessment.Payment.Infrastructure/Course.Assessment.Payment.Infrastructure.csproj" Id="3ca67bff-de6a-4561-80c2-fd259b70a50e" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared.Contracts/Shared.Contracts.csproj" Id="d0e34f45-d52d-45bf-aa46-027d0b8e4d4a" />
+  </Folder>
+</Solution>

@@ -1,0 +1,14 @@
+﻿using Course.Assessment.Payment.Domain.Abstractions;
+using MediatR;
+
+namespace Course.Assessment.Payment.Application.Abstractions.Messaging;
+
+public interface ICommandHandler<TCommand> : IRequestHandler<TCommand, Result>
+    where TCommand : ICommand
+{
+}
+
+public interface ICommandHandler<TCommand, TResponse> : IRequestHandler<TCommand, Result<TResponse>>
+    where TCommand : ICommand<TResponse>
+{
+}
