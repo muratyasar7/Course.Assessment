@@ -26,7 +26,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
             CancellationToken cancellationToken = default)
             where T : IIntegrationEvent
         {
-            
+
             await _retryPolicy.ExecuteAsync(async ct =>
             {
                 var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
@@ -50,9 +50,9 @@ namespace Course.Assessment.Order.Infrastructure.Queue
                     //basicProperties: properties,
                     body: body,
                     cancellationToken: ct);
-            },cancellationToken);
+            }, cancellationToken);
 
-           
+
         }
     }
 }

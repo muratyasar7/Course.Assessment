@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Course.Assessment.Order.Application.Abstractions.Data;
 using Course.Assessment.Order.Application.Clock;
 using Course.Assessment.Order.Domain.Abstractions;

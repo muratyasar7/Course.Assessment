@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Course.Assessment.Order.Infrastructure.Outbox;
+﻿namespace Course.Assessment.Order.Infrastructure.Outbox;
 
 public sealed class OutboxMessage
 {

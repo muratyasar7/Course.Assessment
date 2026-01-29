@@ -2,7 +2,7 @@
 
 namespace Course.Assessment.Payment.Domain.Payment
 {
-    public sealed class PaymentEntity : Entity  
+    public sealed class PaymentEntity : Entity
     {
         public Guid OrderId { get; private set; }
 

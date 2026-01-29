@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace Course.Assessment.Payment.Domain.Shared;
+
 public sealed record Currency
 {
     internal static readonly Currency None = new("");

@@ -14,6 +14,7 @@ using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
 
 namespace Course.Assessment.Payment.Infrastructure;
+
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(

@@ -16,6 +16,7 @@ using RabbitMQ.Client;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Order.Infrastructure;
+
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
@@ -24,7 +25,7 @@ public static class DependencyInjection
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 
-        AddQueue(services,configuration);
+        AddQueue(services, configuration);
 
         AddPersistence(services, configuration);
 
@@ -53,7 +54,7 @@ public static class DependencyInjection
         services.ConfigureOptions<ProcessOutboxMessagesJobSetup>();
     }
 
-    private static void AddQueue(IServiceCollection services,IConfiguration configuration)
+    private static void AddQueue(IServiceCollection services, IConfiguration configuration)
     {
         Console.WriteLine(configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException(nameof(configuration)));
         Console.WriteLine(configuration.GetConnectionString("Kafka") ?? throw new ArgumentNullException(nameof(configuration)));

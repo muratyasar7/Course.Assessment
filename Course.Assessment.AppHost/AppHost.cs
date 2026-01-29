@@ -19,7 +19,7 @@ builder.AddProject<Projects.Course_Assessment_Order_API>("course-assesment-order
     .WaitFor(rabbitmq)
     .WithReference(redis)
     .WaitFor(redis);
-    
+
 builder.AddProject<Projects.Course_Assessment_Payment_API>("course-assesment-paymentapi")
     .WithReference(paymentDb)
     .WaitFor(postgres)

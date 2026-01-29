@@ -1,14 +1,14 @@
 ﻿using System.Text.Json;
+using Course.Assessment.Payment.Application.Clock;
+using Course.Assessment.Payment.Domain.Abstractions;
+using Course.Assessment.Payment.Domain.Outbox;
+using Course.Assessment.Payment.Infrastructure;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
-using Microsoft.EntityFrameworkCore;
-using Course.Assessment.Payment.Application.Clock;
-using Course.Assessment.Payment.Infrastructure;
-using Course.Assessment.Payment.Domain.Outbox;
-using Course.Assessment.Payment.Domain.Abstractions;
 
 [DisallowConcurrentExecution]
 internal sealed class ProcessQueueMessagesJob : IJob

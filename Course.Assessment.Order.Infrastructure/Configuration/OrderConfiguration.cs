@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using Course.Assessment.Order.Domain.Order;
+﻿using Course.Assessment.Order.Domain.Order;
 using Course.Assessment.Payment.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

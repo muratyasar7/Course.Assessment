@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Course.Assessment.Order.Domain.Shared
+﻿namespace Course.Assessment.Order.Domain.Shared
 {
     public sealed record Address(
        string Country,

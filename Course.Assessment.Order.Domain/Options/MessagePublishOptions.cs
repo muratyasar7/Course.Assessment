@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Course.Assessment.Order.Domain.Options
+﻿namespace Course.Assessment.Order.Domain.Options
 {
     public sealed class MessagePublishOptions
     {

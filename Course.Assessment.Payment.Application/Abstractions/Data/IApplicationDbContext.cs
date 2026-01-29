@@ -3,6 +3,7 @@ using Course.Assessment.Payment.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 
 namespace Course.Assessment.Payment.Application.Abstractions.Data;
+
 public interface IApplicationDbContext
 {
     public DbSet<PaymentEntity> Payments { get; }

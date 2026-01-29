@@ -21,7 +21,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue
             _serializerOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }; 
+            };
             _retryPolicy = MessageBusRetryPolicies.Create();
         }
 
@@ -55,7 +55,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue
                     kafkaMessage,
                     ct);
             }, cancellationToken);
-            
+
         }
     }
 

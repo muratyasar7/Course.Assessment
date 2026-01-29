@@ -1,5 +1,4 @@
 ﻿using Course.Assessment.Payment.Domain.Options;
-using Shared.Contracts.QueueMessageEventModels;
 
 namespace Course.Assessment.Payment.Application.Abstractions.Queue
 {

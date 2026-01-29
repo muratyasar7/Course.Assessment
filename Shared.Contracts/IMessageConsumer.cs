@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Shared.Contracts.Events;
+﻿using Shared.Contracts.Events;
 
 namespace Shared.Contracts
 {

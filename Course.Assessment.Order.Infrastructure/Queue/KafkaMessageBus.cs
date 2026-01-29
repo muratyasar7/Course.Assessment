@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection.PortableExecutable;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +23,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
             _serializerOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }; 
+            };
             _retryPolicy = MessageBusRetryPolicies.Create();
         }
 
@@ -60,7 +57,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
                     kafkaMessage,
                     ct);
             }, cancellationToken);
-            
+
         }
     }
 

@@ -1,11 +1,11 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Bus.Shared;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Shared.Contracts;
-using Shared.Contracts.Queue;
-using Bus.Shared;
 using Shared.Contracts.Events;
+using Shared.Contracts.Queue;
 public sealed class RabbitMqConsumer<TEvent> : IMessageConsumer<TEvent> where TEvent : IIntegrationEvent
 {
     private readonly IBusService _busService;

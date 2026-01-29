@@ -44,7 +44,7 @@ namespace Course.Assessment.Order.Infrastructure
                 var domainEvents = GetDomainEvents();
                 foreach (var domainEvent in domainEvents)
                 {
-                    await _publisher.Publish(domainEvent,cancellationToken);
+                    await _publisher.Publish(domainEvent, cancellationToken);
                 }
                 int result = await base.SaveChangesAsync(cancellationToken);
 
