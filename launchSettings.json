@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "course.assessment.order.api": "StartDebugging",
+        "course.assessment.payment.api": "StartDebugging"
+      }
+    }
+  }
+}

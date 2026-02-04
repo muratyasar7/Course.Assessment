@@ -2,4 +2,4 @@
 
 namespace Course.Assessment.Order.Domain.Order.Events;
 
-public sealed record OrderCreatedDomainEvent(Guid OrderId) : IDomainEvent;
+public sealed record OrderCreatedDomainEvent(Guid OrderId,decimal Amount, string Currency) : IDomainEvent;

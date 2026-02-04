@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Shared.Contracts;
 using Shared.Contracts.Events;
+using Shared.Contracts.Queue.Consumer;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers;
@@ -26,7 +26,7 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
             ?? Environment.MachineName;
     }
 
-    public async Task StartAsync(
+    public async Task ConsumeAsync(
         Func<TEvent, CancellationToken, Task> handler,
         CancellationToken cancellationToken)
     {

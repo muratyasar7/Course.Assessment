@@ -5,11 +5,12 @@ using Shared.Contracts.Events;
 using Shared.Contracts.Events.Order;
 using Shared.Contracts.Options;
 using Shared.Contracts.Queue;
+using Shared.Contracts.Queue.Publisher;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
 
 namespace Bus.Shared;
 
-public class RabbitMqBusService(ServiceBusOption busOption) : IBusService
+public class RabbitMqBusService(ServiceBusOption busOption) : IMessagePublisher
 {
     public static Dictionary<object, string> ExchangeList = new();
     private IChannel? _channelWithAck;
@@ -56,7 +57,7 @@ public class RabbitMqBusService(ServiceBusOption busOption) : IBusService
         var body = Encoding.UTF8.GetBytes(eventAsJsonData);
 
         var properties = new BasicProperties { Persistent = true };
-        if (headers is not null) properties.Headers = headers;
+        if (headers is not null) properties.Headers = headers!;
 
         const int maxRetries = 3;
         var attempt = 0;

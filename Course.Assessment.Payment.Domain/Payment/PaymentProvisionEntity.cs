@@ -15,8 +15,8 @@ namespace Course.Assessment.Payment.Domain.Payment
         public DateTime RequestedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
 
-        protected PaymentProvisionEntity() { }
-
+        private PaymentProvisionEntity() { }
+    
         public PaymentProvisionEntity(
             Guid paymentId,
             string provider,

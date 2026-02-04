@@ -1,74 +1,109 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Course.Assessment.Order.Application.Abstractions.Queue;
 using Course.Assessment.Order.Application.Clock;
-using Course.Assessment.Order.Domain.Abstractions;
+using Course.Assessment.Order.Domain.Options;
 using Course.Assessment.Order.Domain.Outbox;
 using Course.Assessment.Order.Infrastructure;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
+using Shared.Contracts.Events;
 
 [DisallowConcurrentExecution]
 internal sealed class ProcessQueueMessagesJob : IJob
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IMessageBus _messageBus;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly OutboxOptions _outboxOptions;
     private readonly ILogger<ProcessQueueMessagesJob> _logger;
 
     public ProcessQueueMessagesJob(
-        IPublisher publisher,
+        ApplicationDbContext dbContext,
+        IMessageBus messageBus,
         IDateTimeProvider dateTimeProvider,
         IOptions<OutboxOptions> outboxOptions,
-        ILogger<ProcessQueueMessagesJob> logger,
-        ApplicationDbContext dbContext)
+        ILogger<ProcessQueueMessagesJob> logger)
     {
-        _publisher = publisher;
-        _dateTimeProvider = dateTimeProvider;
-        _logger = logger;
-        _outboxOptions = outboxOptions.Value;
         _dbContext = dbContext;
+        _messageBus = messageBus;
+        _dateTimeProvider = dateTimeProvider;
+        _outboxOptions = outboxOptions.Value;
+        _logger = logger;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
-
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted,
+            context.CancellationToken);
 
         var outboxMessages = await _dbContext.OutboxMessages
-            .Where(x => x.ProcessedOnUtc == null && x.Status == OutboxMessageStatus.Pending)
-            .OrderBy(x => x.OccurredOnUtc)
-            .Take(_outboxOptions.BatchSize)
-            .ToListAsync(context.CancellationToken);
+        .FromSqlRaw(@"
+            SELECT *
+            FROM outbox_messages
+            WHERE processed_on_utc IS NULL
+                AND status = {0}
+                ORDER BY occurred_on_utc
+                FOR UPDATE SKIP LOCKED
+                LIMIT 10
+            ",
+            OutboxMessageStatus.Pending,
+            _outboxOptions.BatchSize
+         )
+        .ToListAsync(context.CancellationToken);
 
         foreach (var outboxMessage in outboxMessages)
         {
             Exception exception = null;
-
             try
             {
-                var domainEvent = JsonSerializer.Deserialize<IDomainEvent>(outboxMessage.Content);
+                var eventType = Type.GetType(outboxMessage.Type, throwOnError: true)!;
 
-                await _publisher.Publish(domainEvent, context.CancellationToken);
+                var integrationEvent =
+                    (IIntegrationEvent)JsonSerializer.Deserialize(
+                        outboxMessage.Content,
+                        eventType)!;
+
+                await _messageBus.PublishAsync(
+                    integrationEvent,
+                    new MessagePublishOptions
+                    {
+                        Topic = eventType.Name.Replace("Event", "Topic"),
+                        Key = outboxMessage.Id.ToString(),
+                        Headers = new Dictionary<string, string>
+                        {
+                            ["event_id"] = outboxMessage.Id.ToString(),
+                            ["occurred_on"] = outboxMessage.OccurredOnUtc.ToString("O"),
+                            ["event-type"] = eventType.AssemblyQualifiedName!
+                        }
+                    },
+                    context.CancellationToken);
+
+                outboxMessage.ProcessedOnUtc = _dateTimeProvider.UtcNow;
+                outboxMessage.Status = OutboxMessageStatus.Puslished;
+                outboxMessage.Error = null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while processing outbox message {MessageId}", outboxMessage.Id);
-                exception = ex;
+                _logger.LogError(
+                    ex,
+                    "Exception while processing outbox message {MessageId}",
+                    outboxMessage.Id);
+               exception = ex;
             }
-
             outboxMessage.ProcessedOnUtc = _dateTimeProvider.UtcNow;
             outboxMessage.Error = exception?.ToString();
         }
 
         await _dbContext.SaveChangesAsync(context.CancellationToken);
-        await transaction.CommitAsync();
-
+        await transaction.CommitAsync(context.CancellationToken);
     }
 }

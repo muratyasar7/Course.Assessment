@@ -1,65 +1,75 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using Confluent.Kafka;
 using Microsoft.Extensions.Configuration;
-using Shared.Contracts;
 using Shared.Contracts.Events;
+using Shared.Contracts.Queue.Consumer;
 
-namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers;
-
-public sealed class KafkaConsumer<TEvent> : IMessageConsumer<TEvent>, IDisposable where TEvent : IIntegrationEvent
+public sealed class KafkaConsumer<TEvent>
+    : IMessageConsumer<TEvent>, IDisposable
+    where TEvent : IIntegrationEvent
 {
     private readonly IConfiguration _configuration;
-    private IConsumer<Ignore, string>? _consumer;
+    private IConsumer<string, string>? _consumer;
+    private readonly JsonSerializerOptions _serializerOptions;
+
 
     public KafkaConsumer(IConfiguration configuration)
     {
         _configuration = configuration;
+        _serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
     }
 
-    public Task StartAsync(
+    public async Task ConsumeAsync(
         Func<TEvent, CancellationToken, Task> handler,
         CancellationToken cancellationToken)
     {
         var consumerConfig = new ConsumerConfig
         {
-            BootstrapServers = _configuration["Kafka:BootstrapServers"],
-            GroupId = _configuration["Kafka:GroupId"] ?? typeof(TEvent).Name,
-            AutoOffsetReset = AutoOffsetReset.Earliest,
-            EnableAutoCommit = false
+            BootstrapServers = _configuration.GetConnectionString("Kafka"),
+            GroupId = "paymentApi",
+            AutoOffsetReset = AutoOffsetReset.Earliest
         };
-
-        _consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build();
-
-        var topicName = typeof(TEvent).Name;
+        _consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
+        var topicName = typeof(TEvent).Name.Replace("Event","Topic");
         _consumer.Subscribe(topicName);
 
-        return Task.Run(async () =>
+        while (!cancellationToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    var result = _consumer.Consume(cancellationToken);
-                    if (result?.Message?.Value is null)
-                        continue;
+                var result = _consumer.Consume(TimeSpan.FromSeconds(10));
 
-                    var message =
-                        JsonSerializer.Deserialize<TEvent>(result.Message.Value)!;
+                if (result?.Message?.Value == null)
+                    continue;
+                var eventTypeHeader = result.Message.Headers?
+                    .GetLastBytes("event-type");
 
-                    await handler(message, cancellationToken);
+                if (eventTypeHeader is null)
+                    throw new InvalidOperationException("event-type header missing");
 
-                    _consumer.Commit(result); // ACK
-                }
-                catch (OperationCanceledException)
-                {
-                    // graceful shutdown
-                }
-                catch (Exception)
-                {
-                    // logging + DLQ topic burada olur
-                }
+                var eventTypeName = Encoding.UTF8.GetString(eventTypeHeader);
+                var eventType = Type.GetType(eventTypeName, throwOnError: true)!;
+                var message = JsonSerializer.Deserialize(
+                       result.Message.Value,
+                       eventType,_serializerOptions)!;
+
+                await handler((TEvent)message, cancellationToken);
+
+                _consumer.Commit(result);
             }
-        }, cancellationToken);
+            catch (OperationCanceledException)
+            {
+                break; // graceful shutdown
+            }
+            catch (Exception ex)
+            {
+                // log + DLQ
+            }
+        }
     }
 
     public void Dispose()

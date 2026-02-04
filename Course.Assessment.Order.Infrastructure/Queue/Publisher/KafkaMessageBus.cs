@@ -8,7 +8,7 @@ using Course.Assessment.Order.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
 
-namespace Course.Assessment.Order.Infrastructure.Queue
+namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
     public sealed class KafkaMessageBus : IMessageBus
     {
@@ -35,7 +35,10 @@ namespace Course.Assessment.Order.Infrastructure.Queue
         {
             await _retryPolicy.ExecuteAsync(async ct =>
             {
-                var payload = JsonSerializer.Serialize(message, _serializerOptions);
+                var payload = JsonSerializer.Serialize(
+                    message,
+                    message.GetType(),
+                    _serializerOptions);
 
                 var kafkaMessage = new Message<string, string>
                 {
@@ -53,7 +56,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
                 }
 
                 await _producer.ProduceAsync(
-                    options.Destination,
+                    options.Topic,
                     kafkaMessage,
                     ct);
             }, cancellationToken);

@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: kafka
+    ports:
+    - "9092:9092"
+    environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_PROCESS_ROLES: broker,controller
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+        KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        KAFKA_LOG_DIRS: /var/lib/kafka/data  
+    volumes:
+    - kafka-data:/var/lib/kafka/data
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+        - "8085:8080"
+    environment:
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+    - kafka
+  redis:
+        image: redis:7.2-alpine
+        container_name: redis
+        ports:
+            - "6379:6379"
+        command: ["redis-server", "--appendonly", "yes"]
+        volumes:
+            - redis-data:/data 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+        - "5672:5672"   
+        - "15672:15672"  
+    environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+    - "5540:5540"
+    depends_on:
+    - redis
+  course.assessment.order.api:
+    image: ${DOCKER_REGISTRY-}courseassessmentorderapi
+    build:
+      context: .
+      dockerfile: Course.Assessment.Order.API/Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OrderDb: Host=postgres;Database=order;Username=postgres;Password=postgres
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Kafka: kafka:9092
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+
+    depends_on:
+      - rabbitmq
+      - postgres
+
+  course.assessment.payment.api:
+    image: ${DOCKER_REGISTRY-}courseassessmentpaymentapi
+    build:
+      context: .
+      dockerfile: Course.Assessment.Payment.API/Dockerfile
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PaymentDb: Host=postgres;Database=payment;Username=postgres;Password=postgres
+      ConnectionStrings__OrderDb: Host=postgres;Database=order;Username=postgres;Password=postgres
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Kafka: kafka:9092
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - postgres
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:
+

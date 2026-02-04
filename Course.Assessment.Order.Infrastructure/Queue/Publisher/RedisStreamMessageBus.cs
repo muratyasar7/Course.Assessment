@@ -7,7 +7,7 @@ using Polly.Retry;
 using Shared.Contracts.Events;
 using StackExchange.Redis;
 
-namespace Course.Assessment.Order.Infrastructure.Queue
+namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
     public sealed class RedisStreamMessageBus : IMessageBus
     {
@@ -38,7 +38,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
                 };
 
                 await db.StreamAddAsync(
-                    options.Destination,
+                    options.Topic,
                     values);
             });
 

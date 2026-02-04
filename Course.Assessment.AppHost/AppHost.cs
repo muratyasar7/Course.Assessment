@@ -1,10 +1,14 @@
 var builder = DistributedApplication.CreateBuilder(args);
-var postgres = builder.AddPostgres("Database").WithPgAdmin();
+var postgres = builder.AddPostgres("Database").WithPgAdmin().WithDataVolume();
 var kafka = builder.AddKafka("Kafka")
                    .WithKafkaUI()
                    .WithDataVolume();
-var rabbitmq = builder.AddRabbitMQ("RabbitMq");
-var redis = builder.AddRedis("Redis");
+var rabbitmq = builder.AddRabbitMQ("RabbitMq").WithManagementPlugin();
+var redis = builder.AddRedis("Redis").WithPassword(null).WithDataVolume();
+
+builder.AddContainer("redisinsight", "redis/redisinsight:latest")
+    .WithHttpEndpoint(port: 5540, targetPort: 5540)
+    .WithReference(redis);
 
 var orderDb = postgres.AddDatabase("OrderDb", databaseName: "order");
 var paymentDb = postgres.AddDatabase("PaymentDb", databaseName: "payment");

@@ -1,11 +1,12 @@
 ﻿using System;
+using Confluent.Kafka;
 using Course.Assessment.Order.Application.Abstractions.Data;
 using Course.Assessment.Order.Application.Abstractions.Queue;
 using Course.Assessment.Order.Application.Clock;
 using Course.Assessment.Order.Domain.Abstractions;
 using Course.Assessment.Order.Domain.Order;
 using Course.Assessment.Order.Infrastructure.Clock;
-using Course.Assessment.Order.Infrastructure.Queue;
+using Course.Assessment.Order.Infrastructure.Queue.Publisher;
 using Course.Assessment.Order.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +26,11 @@ public static class DependencyInjection
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 
-        AddQueue(services, configuration);
+        //AddRedisQueue(services, configuration);
+
+        AddKafkaQueue(services, configuration);
+
+        //AddRabbitMqQueue(services, configuration);
 
         AddPersistence(services, configuration);
 
@@ -53,13 +58,10 @@ public static class DependencyInjection
 
         services.ConfigureOptions<ProcessOutboxMessagesJobSetup>();
     }
-
-    private static void AddQueue(IServiceCollection services, IConfiguration configuration)
+    private static void AddRabbitMqQueue(IServiceCollection services, IConfiguration configuration)
     {
         Console.WriteLine(configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException(nameof(configuration)));
-        Console.WriteLine(configuration.GetConnectionString("Kafka") ?? throw new ArgumentNullException(nameof(configuration)));
-        Console.WriteLine(configuration.GetConnectionString("Redis") ?? throw new ArgumentNullException(nameof(configuration)));
-        services.AddSingleton<IConnection>(sp =>
+        services.AddSingleton(sp =>
         {
             var factory = new ConnectionFactory()
             {
@@ -67,24 +69,40 @@ public static class DependencyInjection
             };
             return factory.CreateConnectionAsync().GetAwaiter().GetResult();
         });
+        services.AddScoped<IMessageBus, RabbitMqMessageBus>();
+    }
+    private static void AddKafkaQueue(IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString =
+            configuration.GetConnectionString("Kafka")
+            ?? throw new ArgumentNullException("Kafka connection string missing");
 
         services.AddSingleton(sp =>
         {
-            var connectionString = configuration.GetConnectionString("Kafka") ?? throw new ArgumentNullException(nameof(configuration));
-            var producerConfig = new Confluent.Kafka.ProducerConfig
+            ProducerConfig producerConfig = new()
             {
-                BootstrapServers = connectionString
+                BootstrapServers = connectionString,
+                Acks = Acks.All,
+                EnableIdempotence = true
             };
-            return new Confluent.Kafka.ProducerBuilder<string, string>(producerConfig).Build();
+
+            return new ProducerBuilder<string, string>(producerConfig)
+                .Build();
         });
+
+        services.AddScoped<IMessageBus, KafkaMessageBus>();
+    }
+    private static void AddRedisQueue(IServiceCollection services, IConfiguration configuration)
+    {
+        Console.WriteLine(configuration.GetConnectionString("Redis") ?? throw new ArgumentNullException(nameof(configuration)));
+       
+       
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var redisConn = configuration.GetConnectionString("Redis") ??
                             throw new ArgumentNullException(nameof(configuration));
             return ConnectionMultiplexer.Connect(redisConn);
         });
-        services.AddScoped<IMessageBus, KafkaMessageBus>();
-        services.AddScoped<IMessageBus, RabbitMqMessageBus>();
         services.AddScoped<IMessageBus, RedisStreamMessageBus>();
     }
     private static void AddPersistence(IServiceCollection services, IConfiguration configuration)

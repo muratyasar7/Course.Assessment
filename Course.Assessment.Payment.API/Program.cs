@@ -10,16 +10,6 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-builder.Services.AddSingleton<IConnection>(sp =>
-{
-    var factory = new ConnectionFactory
-    {
-        HostName = "RabbitMq"
-    };
-    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
-});
-
 var app = builder.Build();
 
 app.MapDefaultEndpoints();

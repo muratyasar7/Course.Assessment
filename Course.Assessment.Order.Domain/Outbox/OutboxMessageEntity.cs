@@ -2,9 +2,9 @@
 {
     public sealed class OutboxMessageEntity
     {
-        public OutboxMessageEntity(Guid id, DateTime occurredOnUtc, string type, string content)
+        public OutboxMessageEntity(DateTime occurredOnUtc, string type, string content)
         {
-            Id = id;
+            Id = Guid.NewGuid();
             OccurredOnUtc = occurredOnUtc;
             Content = content;
             Type = type;

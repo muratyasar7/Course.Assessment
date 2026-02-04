@@ -3,24 +3,24 @@ using System.Text.Json;
 using Bus.Shared;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Shared.Contracts;
 using Shared.Contracts.Events;
-using Shared.Contracts.Queue;
+using Shared.Contracts.Queue.Consumer;
+using Shared.Contracts.Queue.Publisher;
 public sealed class RabbitMqConsumer<TEvent> : IMessageConsumer<TEvent> where TEvent : IIntegrationEvent
 {
-    private readonly IBusService _busService;
+    private readonly IMessagePublisher _messagePublisher;
     private IChannel? _channel;
 
-    public RabbitMqConsumer(IBusService busService)
+    public RabbitMqConsumer(IMessagePublisher busService)
     {
-        _busService = busService;
+        _messagePublisher = busService;
     }
 
-    public async Task StartAsync(
+    public async Task ConsumeAsync(
         Func<TEvent, CancellationToken, Task> handler,
         CancellationToken cancellationToken)
     {
-        _channel = await _busService.CreateChannel();
+        _channel = await _messagePublisher.CreateChannel();
 
         await _channel.BasicQosAsync(0, 4, true, cancellationToken);
 

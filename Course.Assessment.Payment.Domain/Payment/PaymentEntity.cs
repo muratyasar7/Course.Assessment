@@ -18,7 +18,7 @@ namespace Course.Assessment.Payment.Domain.Payment
         private readonly List<PaymentProvisionEntity> _provisions = new();
         public IReadOnlyCollection<PaymentProvisionEntity> Provisions => _provisions;
 
-        protected PaymentEntity() { }
+        private PaymentEntity() { }
 
         public PaymentEntity(
             Guid orderId,
@@ -33,6 +33,11 @@ namespace Course.Assessment.Payment.Domain.Payment
             PaymentReference = $"PAY-{Guid.NewGuid():N}";
             Status = PaymentStatus.Initiated;
             CreatedAt = DateTime.UtcNow;
+        }
+
+        public static PaymentEntity Create(Guid orderId,decimal amount,string currency)
+        {
+           return new PaymentEntity(orderId, amount, currency);
         }
 
         public PaymentProvisionEntity CreateProvision(string provider)

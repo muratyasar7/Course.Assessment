@@ -9,7 +9,7 @@ using Polly.Retry;
 using RabbitMQ.Client;
 using Shared.Contracts.Events;
 
-namespace Course.Assessment.Order.Infrastructure.Queue
+namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
     public sealed class RabbitMqMessageBus : IMessageBus, IAsyncDisposable
     {
@@ -63,7 +63,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue
                 {
                     ct.ThrowIfCancellationRequested();
                     await channel.BasicPublishAsync(
-                        exchange: options.Destination,
+                        exchange: options.Topic,
                         routingKey: string.Empty,
                         mandatory: false,
                         body: body);

@@ -4,7 +4,7 @@ using Course.Assessment.Payment.Domain.Shared;
 
 namespace Course.Assessment.Order.Application.Order.CreateOrder
 {
-    public sealed record CreateOrderRequest(Guid CustomerId, Money Amount, Address Address, DateTime CreatedAt);
+    public sealed record CreateOrderRequest(Guid CustomerId, Money Amount, Address Address);
     public sealed record CreateOrderCommand(
         CreateOrderRequest Request) : ICommand<Guid>;
 }

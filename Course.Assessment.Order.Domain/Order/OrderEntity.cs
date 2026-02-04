@@ -35,7 +35,7 @@ namespace Course.Assessment.Order.Domain.Order
         public static OrderEntity Create(Guid id, Guid customerId, Money amount, Address address, DateTime createdAt)
         {
             var newOrder = new OrderEntity(id, customerId, amount, address, createdAt);
-            newOrder.RaiseDomainEvent(new OrderCreatedDomainEvent(id));
+            newOrder.RaiseDomainEvent(new OrderCreatedDomainEvent(id, amount.Amount, amount.Currency.Code));
             return newOrder;
         }
     }
