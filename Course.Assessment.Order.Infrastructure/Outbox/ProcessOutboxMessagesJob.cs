@@ -53,7 +53,7 @@ internal sealed class ProcessQueueMessagesJob : IJob
                 AND status = {0}
                 ORDER BY occurred_on_utc
                 FOR UPDATE SKIP LOCKED
-                LIMIT 10
+                LIMIT {1}
             ",
             OutboxMessageStatus.Pending,
             _outboxOptions.BatchSize

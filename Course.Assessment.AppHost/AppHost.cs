@@ -4,7 +4,7 @@ var kafka = builder.AddKafka("Kafka")
                    .WithKafkaUI()
                    .WithDataVolume();
 var rabbitmq = builder.AddRabbitMQ("RabbitMq").WithManagementPlugin();
-var redis = builder.AddRedis("Redis").WithPassword(null).WithDataVolume();
+var redis = builder.AddRedis("Redis",6379).WithPassword(null).WithDataVolume();
 
 builder.AddContainer("redisinsight", "redis/redisinsight:latest")
     .WithHttpEndpoint(port: 5540, targetPort: 5540)

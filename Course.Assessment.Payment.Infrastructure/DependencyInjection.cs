@@ -18,6 +18,7 @@ using Shared.Contracts.Events.Order;
 using Shared.Contracts.Queue;
 using Shared.Contracts.Queue.Consumer;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
+using StackExchange.Redis;
 
 namespace Course.Assessment.Payment.Infrastructure;
 
@@ -28,6 +29,8 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
+
+        AddRedis(services, configuration);
 
         AddPersistence(services, configuration);
 
@@ -80,11 +83,23 @@ public static class DependencyInjection
 
     private static void AddConsumers(IServiceCollection services)
     {
+        
         services.AddScoped<IIntegrationEventHandler<OrderCreatedIntegrationEvent>, OrderCreatedIntegrationEventHandler>();
         services.AddScoped<IIntegrationEventHandler<OrderCanceledIntegrationEvent>, OrderCanceledIntegrationEventHandler>();
-        services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
+        //services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
+        services.AddScoped(typeof(IMessageConsumer<>), typeof(RedisStreamConsumer<>));
         //services.AddScoped(typeof(IRabbitMqMessageConsumer<>), typeof(RabbitMqConsumer<>));
         //services.AddScoped(typeof(IRedisStreamConsumer<>), typeof(RedisStreamConsumer<>));
+    }
+
+    private static void AddRedis(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var redisConn = configuration.GetConnectionString("Redis") ??
+                            throw new ArgumentNullException(nameof(configuration));
+            return ConnectionMultiplexer.Connect(redisConn);
+        });
     }
 
     private static void AddHostedServices(IServiceCollection services)
@@ -94,23 +109,5 @@ public static class DependencyInjection
         services.AddHostedService<OrderCreatedConsumerHostedService>();
         services.AddHostedService<OrderCanceledConsumerHostedService>();
     }
-
-    //private static void AddKafkaConsumer(IServiceCollection services, IConfiguration configuration)
-    //{
-    //    var connectionString =
-    //       configuration.GetConnectionString("Kafka")
-    //       ?? throw new ArgumentNullException("Kafka connection string missing");
-    //    services.AddSingleton(new ConsumerConfig
-    //    {
-    //        BootstrapServers = connectionString,
-    //        GroupId = "payment-service",
-    //        AutoOffsetReset = AutoOffsetReset.Earliest,
-    //        EnableAutoCommit = false
-    //    });
-
-    //    services.AddScoped<IIntegrationEventRouter, IntegrationEventRouter>();
-
-    //    services.AddHostedService<KafkaConsumer>();
-    //}
 
 }

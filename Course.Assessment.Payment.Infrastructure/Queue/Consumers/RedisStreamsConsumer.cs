@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
+using Course.Assessment.Payment.Domain.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Shared.Contracts.Events;
 using Shared.Contracts.Queue.Consumer;
@@ -13,17 +15,20 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
     private readonly string _streamName;
     private readonly string _groupName;
     private readonly string _consumerName;
+    private readonly JsonSerializerOptions _serializerOptions;
 
     public RedisStreamConsumer(
         IConfiguration configuration,
         IConnectionMultiplexer redis)
     {
+        _serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
         _redis = redis;
-
-        _streamName = configuration["Redis:StreamName"] ?? typeof(TEvent).Name;
-        _groupName = configuration["Redis:GroupName"] ?? "default-group";
-        _consumerName = configuration["Redis:ConsumerName"]
-            ?? Environment.MachineName;
+        _streamName = typeof(TEvent).Name.Replace("Event","Topic");
+        _groupName = "PaymentGroup";
+        _consumerName = $"{Environment.MachineName}-{Guid.NewGuid()}";
     }
 
     public async Task ConsumeAsync(
@@ -31,7 +36,6 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
         CancellationToken cancellationToken)
     {
         var db = _redis.GetDatabase();
-
         try
         {
             await db.StreamCreateConsumerGroupAsync(
@@ -41,7 +45,7 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
         }
         catch (RedisServerException ex) when (ex.Message.Contains("BUSYGROUP"))
         {
-            // group zaten var → ignore
+
         }
 
         while (!cancellationToken.IsCancellationRequested)
@@ -52,7 +56,7 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
                     _streamName,
                     _groupName,
                     _consumerName,
-                    StreamPosition.Beginning,
+                    ">",
                     count: 10);
 
                 if (entries.Length == 0)
@@ -66,14 +70,25 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
                     try
                     {
                         var json = entry.Values
-                            .First(x => x.Name == "data")
+                            .First(x => x.Name == "payload")
                             .Value
                             .ToString();
 
-                        var message =
-                            JsonSerializer.Deserialize<TEvent>(json!)!;
+                        var eventTypeName = entry.Values
+                            .First(x => x.Name == "event-type")
+                            .Value
+                            .ToString();
 
-                        await handler(message, cancellationToken);
+                        if (eventTypeName is null)
+                            throw new InvalidOperationException("event-type header missing");
+
+                        var eventType = Type.GetType(eventTypeName, throwOnError: true)!;
+                        var message = JsonSerializer.Deserialize(
+                               json,
+                               eventType, _serializerOptions)!;
+
+                        await handler((TEvent)message, cancellationToken);
+
 
                         await db.StreamAcknowledgeAsync(
                             _streamName,

@@ -26,9 +26,9 @@ public static class DependencyInjection
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 
-        //AddRedisQueue(services, configuration);
+        AddRedisQueue(services, configuration);
 
-        AddKafkaQueue(services, configuration);
+        //AddKafkaQueue(services, configuration);
 
         //AddRabbitMqQueue(services, configuration);
 
