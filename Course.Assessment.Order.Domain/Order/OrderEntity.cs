@@ -38,5 +38,10 @@ namespace Course.Assessment.Order.Domain.Order
             newOrder.RaiseDomainEvent(new OrderCreatedDomainEvent(id, amount.Amount, amount.Currency.Code));
             return newOrder;
         }
+
+        public void CancelOrder()
+        {
+            RaiseDomainEvent(new OrderCanceledDomainEvent(Id));
+        }
     }
 }

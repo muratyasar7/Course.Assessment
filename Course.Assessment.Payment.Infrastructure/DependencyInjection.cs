@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
 using Shared.Contracts.Events;
+using Shared.Contracts.Events.Order;
 using Shared.Contracts.Queue;
 using Shared.Contracts.Queue.Consumer;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
@@ -80,6 +81,7 @@ public static class DependencyInjection
     private static void AddConsumers(IServiceCollection services)
     {
         services.AddScoped<IIntegrationEventHandler<OrderCreatedIntegrationEvent>, OrderCreatedIntegrationEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<OrderCanceledIntegrationEvent>, OrderCanceledIntegrationEventHandler>();
         services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
         //services.AddScoped(typeof(IRabbitMqMessageConsumer<>), typeof(RabbitMqConsumer<>));
         //services.AddScoped(typeof(IRedisStreamConsumer<>), typeof(RedisStreamConsumer<>));
@@ -88,7 +90,9 @@ public static class DependencyInjection
     private static void AddHostedServices(IServiceCollection services)
     {
         services.AddScoped<OrderCreatedIntegrationEventHandler>();
+        services.AddScoped<OrderCanceledIntegrationEventHandler>();
         services.AddHostedService<OrderCreatedConsumerHostedService>();
+        services.AddHostedService<OrderCanceledConsumerHostedService>();
     }
 
     //private static void AddKafkaConsumer(IServiceCollection services, IConfiguration configuration)

@@ -3,6 +3,7 @@ using Course.Assessment.Order.Infrastructure.Repositories;
 using Course.Assessment.Payment.Domain.Payment;
 using Course.Assessment.Payment.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 namespace Bookify.Infrastructure.Repositories;
 
@@ -28,5 +29,11 @@ internal sealed class PaymentRepository : Repository<PaymentEntity>, IPaymentRep
         return DbContext.Payments
             .AsNoTracking()
             .AnyAsync(p => p.OrderId == orderId, ct);
+    }
+
+    public async Task<PaymentEntity?> GetPaymentByOrderId(Guid OrderId, CancellationToken ct)
+    {
+        return await DbContext.Payments
+           .FirstOrDefaultAsync(p => p.OrderId == OrderId, ct);
     }
 }

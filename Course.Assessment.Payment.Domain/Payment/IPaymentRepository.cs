@@ -8,6 +8,8 @@ namespace Course.Assessment.Payment.Domain.Payment
         Task<bool> ExistsByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
         Task<PaymentEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+        Task<PaymentEntity?> GetPaymentByOrderId(Guid OrderId, CancellationToken cancellationToken = default);
+
         void Add(PaymentEntity order);
     }
 }

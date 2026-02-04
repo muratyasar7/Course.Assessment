@@ -10,6 +10,7 @@ namespace Course.Assessment.Order.API.Endpoints
         public static IEndpointRouteBuilder MapOrderEndpoints(this IEndpointRouteBuilder builder)
         {
             builder.MapPost("order", CreateOrder);
+            builder.MapPatch("order/cancel/{orderId}", CancelOrder);
             return builder;
         }
 
@@ -19,9 +20,9 @@ namespace Course.Assessment.Order.API.Endpoints
             var result = await sender.Send(command);
             return Results.Created();
         }
-        public static async Task<IResult> CancelOrder([FromHeader] string idempotencyKey, [FromRoute] string referenceId, ISender sender, CancellationToken cancellationToken)
+        public static async Task<IResult> CancelOrder([FromHeader] string idempotencyKey, [FromRoute] Guid orderId, ISender sender, CancellationToken cancellationToken)
         {
-            var command = new CancelOrderCommand(idempotencyKey, referenceId);
+            var command = new CancelOrderCommand(idempotencyKey, orderId);
             var result = await sender.Send(command);
             return Results.Created();
         }
