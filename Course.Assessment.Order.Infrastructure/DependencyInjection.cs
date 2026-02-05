@@ -1,19 +1,20 @@
 ﻿using System;
 using Confluent.Kafka;
 using Course.Assessment.Order.Application.Abstractions.Data;
-using Course.Assessment.Order.Application.Abstractions.Queue;
 using Course.Assessment.Order.Application.Clock;
 using Course.Assessment.Order.Domain.Abstractions;
 using Course.Assessment.Order.Domain.Order;
 using Course.Assessment.Order.Infrastructure.Clock;
 using Course.Assessment.Order.Infrastructure.Queue.Publisher;
 using Course.Assessment.Order.Infrastructure.Repositories;
+using Course.Assessment.Payment.Infrastructure.Queue.Publishers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
 using RabbitMQ.Client;
+using Shared.Contracts.Queue.Publisher;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Order.Infrastructure;
@@ -26,11 +27,23 @@ public static class DependencyInjection
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 
-        AddRedisQueue(services, configuration);
+        var queueSystem = configuration.GetSection("QueueSystem").Value;
 
-        //AddKafkaQueue(services, configuration);
 
-        //AddRabbitMqQueue(services, configuration);
+        switch (queueSystem)
+        {
+            case "RabbitMq":
+                AddRabbitMqQueue(services, configuration);
+                break;
+            case "Kafka":
+                AddKafkaQueue(services, configuration);
+                break;
+            case "RedisStreams":
+                AddRedisQueue(services, configuration);
+                break;
+            default:
+                throw new ArgumentException(nameof(queueSystem));
+        }
 
         AddPersistence(services, configuration);
 
@@ -60,16 +73,28 @@ public static class DependencyInjection
     }
     private static void AddRabbitMqQueue(IServiceCollection services, IConfiguration configuration)
     {
-        Console.WriteLine(configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException(nameof(configuration)));
+        services.AddScoped<IMessagePublisher, RabbitMQMessagePublisher>();
+        services.AddSingleton<IConnectionFactory>(_ =>
+        {
+            var connection = configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException("Rabbit Mq config missing");
+            return new ConnectionFactory()
+            {
+                Uri = new Uri(connection)
+            };
+        });
+
         services.AddSingleton(sp =>
         {
-            var factory = new ConnectionFactory()
-            {
-                Uri = new Uri(configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException(nameof(configuration)))
-            };
+            var factory = sp.GetRequiredService<IConnectionFactory>();
             return factory.CreateConnectionAsync().GetAwaiter().GetResult();
         });
-        services.AddScoped<IMessageBus, RabbitMqMessageBus>();
+
+        services.AddScoped(sp =>
+        {
+            var connection = sp.GetRequiredService<IConnection>();
+            return connection.CreateChannelAsync().GetAwaiter().GetResult();
+        });
+
     }
     private static void AddKafkaQueue(IServiceCollection services, IConfiguration configuration)
     {
@@ -90,7 +115,7 @@ public static class DependencyInjection
                 .Build();
         });
 
-        services.AddScoped<IMessageBus, KafkaMessageBus>();
+        services.AddScoped<IMessagePublisher, KafkaMessagePublisher>();
     }
     private static void AddRedisQueue(IServiceCollection services, IConfiguration configuration)
     {
@@ -103,7 +128,7 @@ public static class DependencyInjection
                             throw new ArgumentNullException(nameof(configuration));
             return ConnectionMultiplexer.Connect(redisConn);
         });
-        services.AddScoped<IMessageBus, RedisStreamMessageBus>();
+        services.AddScoped<IMessagePublisher, RedisStreamMessagePublisher>();
     }
     private static void AddPersistence(IServiceCollection services, IConfiguration configuration)
     {

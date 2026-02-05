@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Abstractions\Queue\" />
+  </ItemGroup>
+
 </Project>

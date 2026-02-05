@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
+using Shared.Contracts.Events;
 
 [DisallowConcurrentExecution]
 internal sealed class ProcessQueueMessagesJob : IJob
@@ -50,9 +51,9 @@ internal sealed class ProcessQueueMessagesJob : IJob
 
             try
             {
-                var domainEvent = JsonSerializer.Deserialize<IDomainEvent>(outboxMessage.Content);
-                if (domainEvent != null)
-                    await _publisher.Publish(domainEvent, context.CancellationToken);
+                var integrationEvent = JsonSerializer.Deserialize<IIntegrationEvent>(outboxMessage.Content);
+                if (integrationEvent != null)
+                    await _publisher.Publish(integrationEvent, context.CancellationToken);
                 else
                     continue;
             }

@@ -3,7 +3,7 @@ using Shared.Contracts.Events;
 
 namespace Course.Assessment.Payment.Application.Abstractions.Queue
 {
-    public interface IMessageBus
+    public interface IMessagePublisher
     {
         Task PublishAsync<T>(
             T message,

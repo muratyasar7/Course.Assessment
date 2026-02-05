@@ -3,25 +3,26 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Course.Assessment.Order.Application.Abstractions.Queue;
-using Course.Assessment.Order.Domain.Options;
 using Npgsql.Internal;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
+using Shared.Contracts.Queue.Policies;
+using Shared.Contracts.Queue.Publisher;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
-    public sealed class RedisStreamMessageBus : IMessageBus
+    public sealed class RedisStreamMessagePublisher : IMessagePublisher
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly AsyncRetryPolicy _retryPolicy;
         private readonly JsonSerializerOptions _serializerOptions;
 
-        public RedisStreamMessageBus(IConnectionMultiplexer redis)
+        public RedisStreamMessagePublisher(IConnectionMultiplexer redis)
         {
             _redis = redis;
-            _retryPolicy = MessageBusRetryPolicies.Create();
+            _retryPolicy = PublisherRetryPolicies.Create();
             _serializerOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase

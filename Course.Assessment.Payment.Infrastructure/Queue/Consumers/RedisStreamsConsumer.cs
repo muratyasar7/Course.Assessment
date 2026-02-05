@@ -2,8 +2,10 @@
 using System.Text.Json;
 using Course.Assessment.Payment.Domain.Abstractions;
 using Microsoft.Extensions.Configuration;
+using Polly.Retry;
 using Shared.Contracts.Events;
 using Shared.Contracts.Queue.Consumer;
+using Shared.Contracts.Queue.Policies;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers;
@@ -16,6 +18,8 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
     private readonly string _groupName;
     private readonly string _consumerName;
     private readonly JsonSerializerOptions _serializerOptions;
+    private readonly AsyncRetryPolicy _retryPolicy;
+
 
     public RedisStreamConsumer(
         IConfiguration configuration,
@@ -29,6 +33,7 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
         _streamName = typeof(TEvent).Name.Replace("Event","Topic");
         _groupName = "PaymentGroup";
         _consumerName = $"{Environment.MachineName}-{Guid.NewGuid()}";
+        _retryPolicy = ConsumerRetryPolicies.Create();
     }
 
     public async Task ConsumeAsync(
@@ -87,9 +92,10 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
                                json,
                                eventType, _serializerOptions)!;
 
-                        await handler((TEvent)message, cancellationToken);
-
-
+                        await _retryPolicy.ExecuteAsync(async ct =>
+                        {
+                            await handler((TEvent)message, ct);
+                        }, cancellationToken);
                         await db.StreamAcknowledgeAsync(
                             _streamName,
                             _groupName,

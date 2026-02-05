@@ -18,7 +18,7 @@ namespace Course.Assessment.Order.API.Endpoints
         {
             var command = new CreateOrderCommand(request);
             var result = await sender.Send(command);
-            return Results.Created();
+            return Results.Ok(result);
         }
         public static async Task<IResult> CancelOrder([FromHeader] string idempotencyKey, [FromRoute] Guid orderId, ISender sender, CancellationToken cancellationToken)
         {

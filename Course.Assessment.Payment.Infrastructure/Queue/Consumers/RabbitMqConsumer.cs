@@ -1,34 +1,55 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Bus.Shared;
+using Course.Assessment.Payment.Domain.Abstractions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Shared.Contracts.Events;
 using Shared.Contracts.Queue.Consumer;
-using Shared.Contracts.Queue.Publisher;
-public sealed class RabbitMqConsumer<TEvent> : IMessageConsumer<TEvent> where TEvent : IIntegrationEvent
-{
-    private readonly IMessagePublisher _messagePublisher;
-    private IChannel? _channel;
 
-    public RabbitMqConsumer(IMessagePublisher busService)
+public sealed class RabbitMqConsumer<TEvent>
+    : IMessageConsumer<TEvent>, IDisposable
+    where TEvent : IIntegrationEvent
+{
+    private readonly IChannel _channel;
+    private readonly JsonSerializerOptions _serializerOptions;
+
+    public RabbitMqConsumer(IChannel channel)
     {
-        _messagePublisher = busService;
+        _channel = channel;
+
+        _serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
     }
 
     public async Task ConsumeAsync(
         Func<TEvent, CancellationToken, Task> handler,
         CancellationToken cancellationToken)
     {
-        _channel = await _messagePublisher.CreateChannel();
+        var exchangeName = typeof(TEvent).Name;
+        var queueName = $"worker.{exchangeName}.queue";
 
-        await _channel.BasicQosAsync(0, 4, true, cancellationToken);
+        await _channel.BasicQosAsync(
+            prefetchSize: 0,
+            prefetchCount: 4,
+            global: false);
 
-        var queueName = $"worker.{typeof(TEvent).Name}.queue";
-        var exchangeName = RabbitMqBusService.GetExchangeName<TEvent>();
+        await _channel.ExchangeDeclareAsync(
+            exchange: exchangeName,
+            type: ExchangeType.Fanout,
+            durable: true);
 
-        await _channel.QueueDeclareAsync(queueName, true, false, false, cancellationToken: cancellationToken);
-        await _channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken);
+        await _channel.QueueDeclareAsync(
+            queue: queueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        await _channel.QueueBindAsync(
+            queue: queueName,
+            exchange: exchangeName,
+            routingKey: string.Empty);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
 
@@ -37,18 +58,44 @@ public sealed class RabbitMqConsumer<TEvent> : IMessageConsumer<TEvent> where TE
             try
             {
                 var json = Encoding.UTF8.GetString(args.Body.ToArray());
-                var message = JsonSerializer.Deserialize<TEvent>(json)!;
+
+                var message = JsonSerializer.Deserialize<TEvent>(
+                    json,
+                    _serializerOptions)!;
 
                 await handler(message, cancellationToken);
 
-                await _channel.BasicAckAsync(args.DeliveryTag, false);
+                await _channel.BasicAckAsync(
+                    deliveryTag: args.DeliveryTag,
+                    multiple: false);
             }
-            catch
+            catch (OperationCanceledException)
             {
-                await _channel.BasicRejectAsync(args.DeliveryTag, true);
+                await _channel.BasicNackAsync(
+                    deliveryTag: args.DeliveryTag,
+                    multiple: false,
+                    requeue: true);
+            }
+            catch (Exception)
+            {
+                await _channel.BasicNackAsync(
+                    deliveryTag: args.DeliveryTag,
+                    multiple: false,
+                    requeue: false);
             }
         };
 
-        await _channel.BasicConsumeAsync(queueName, false, consumer, cancellationToken);
+        await _channel.BasicConsumeAsync(
+            queue: queueName,
+            autoAck: false,
+            consumer: consumer);
+        await Task.Delay(Timeout.Infinite, cancellationToken);
+
+    }
+
+    public void Dispose()
+    {
+        if (_channel.IsOpen)
+            _channel.CloseAsync().GetAwaiter().GetResult();
     }
 }

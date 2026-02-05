@@ -1,39 +1,64 @@
 var builder = DistributedApplication.CreateBuilder(args);
+var queueSystem = builder.Configuration.GetSection("QueueSystem").Value;
+IResourceBuilder<KafkaServerResource>? kafka = null;
+IResourceBuilder<RabbitMQServerResource>? rabbitmq = null;
+IResourceBuilder<RedisResource>? redis = null;
+switch (queueSystem)
+{
+    case "RabbitMq":
+        rabbitmq = builder.AddRabbitMQ("RabbitMq").WithManagementPlugin();
+        break;
+    case "Kafka":
+        kafka = builder.AddKafka("Kafka")
+                  .WithKafkaUI()
+                  .WithDataVolume();
+        break;
+    case "RedisStreams":
+        redis = builder.AddRedis("Redis", 6379).WithPassword(null).WithDataVolume();
+        builder.AddContainer("redisinsight", "redis/redisinsight:latest")
+            .WithHttpEndpoint(port: 5540, targetPort: 5540)
+            .WithReference(redis);
+        break;
+    default:
+        throw new ArgumentException(nameof(queueSystem));
+}
 var postgres = builder.AddPostgres("Database").WithPgAdmin().WithDataVolume();
-var kafka = builder.AddKafka("Kafka")
-                   .WithKafkaUI()
-                   .WithDataVolume();
-var rabbitmq = builder.AddRabbitMQ("RabbitMq").WithManagementPlugin();
-var redis = builder.AddRedis("Redis",6379).WithPassword(null).WithDataVolume();
 
-builder.AddContainer("redisinsight", "redis/redisinsight:latest")
-    .WithHttpEndpoint(port: 5540, targetPort: 5540)
-    .WithReference(redis);
+
 
 var orderDb = postgres.AddDatabase("OrderDb", databaseName: "order");
 var paymentDb = postgres.AddDatabase("PaymentDb", databaseName: "payment");
 
 
-builder.AddProject<Projects.Course_Assessment_Order_API>("course-assesment-orderapi")
-    .WithReference(kafka)
-    .WaitFor(kafka)
+var orderApi = builder.AddProject<Projects.Course_Assessment_Order_API>("course-assesment-orderapi")
     .WithReference(orderDb)
-    .WaitFor(postgres)
-    .WithReference(rabbitmq)
-    .WaitFor(rabbitmq)
-    .WithReference(redis)
-    .WaitFor(redis);
+    .WaitFor(postgres);
 
-builder.AddProject<Projects.Course_Assessment_Payment_API>("course-assesment-paymentapi")
+var paymentApi = builder.AddProject<Projects.Course_Assessment_Payment_API>("course-assesment-paymentapi")
     .WithReference(paymentDb)
-    .WaitFor(postgres)
-    .WithReference(kafka)
-    .WaitFor(kafka)
-    .WithReference(orderDb)
-    .WaitFor(postgres)
-    .WithReference(rabbitmq)
-    .WaitFor(rabbitmq)
-    .WithReference(redis)
-    .WaitFor(redis);
+    .WaitFor(postgres);
 
+switch (queueSystem)
+{
+    case "RabbitMq":
+        orderApi.WithReference(rabbitmq!);
+        orderApi.WaitFor(rabbitmq!);
+        paymentApi.WithReference(rabbitmq!);
+        paymentApi.WaitFor(rabbitmq!);
+        break;
+    case "Kafka":
+        orderApi.WithReference(kafka!);
+        orderApi.WaitFor(kafka!);
+        paymentApi.WithReference(kafka!);
+        paymentApi.WaitFor(kafka!);
+        break;
+    case "RedisStreams":
+        orderApi.WithReference(redis!);
+        orderApi.WaitFor(redis!);
+        paymentApi.WithReference(redis!);
+        paymentApi.WaitFor(redis!);
+        break;
+    default:
+        throw new ArgumentException(nameof(queueSystem));
+}
 builder.Build().Run();

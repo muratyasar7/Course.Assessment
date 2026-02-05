@@ -17,6 +17,5 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
                 .HasConversion(currency => currency.Code, code => Currency.FromCode(code));
         });
         builder.OwnsOne(order => order.Address);
-
     }
 }

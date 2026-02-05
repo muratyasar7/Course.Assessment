@@ -1,4 +1,4 @@
-﻿namespace Course.Assessment.Order.Domain.Options
+﻿namespace Shared.Contracts.Options
 {
     public sealed class MessagePublishOptions
     {

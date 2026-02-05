@@ -3,11 +3,12 @@ using Course.Assessment.Payment.Application.Abstractions.Queue;
 using Course.Assessment.Payment.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Queue.Policies;
 using StackExchange.Redis;
 
-namespace Course.Assessment.Payment.Infrastructure.Queue
+namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 {
-    public sealed class RedisStreamMessageBus : IMessageBus
+    public sealed class RedisStreamMessageBus : IMessagePublisher
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly AsyncRetryPolicy _retryPolicy;
@@ -15,7 +16,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue
         public RedisStreamMessageBus(IConnectionMultiplexer redis)
         {
             _redis = redis;
-            _retryPolicy = MessageBusRetryPolicies.Create();
+            _retryPolicy = PublisherRetryPolicies.Create();
         }
 
         public async Task PublishAsync<T>(

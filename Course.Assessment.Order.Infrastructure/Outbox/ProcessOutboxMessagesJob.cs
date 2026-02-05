@@ -4,9 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Course.Assessment.Order.Application.Abstractions.Queue;
 using Course.Assessment.Order.Application.Clock;
-using Course.Assessment.Order.Domain.Options;
 using Course.Assessment.Order.Domain.Outbox;
 using Course.Assessment.Order.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -15,19 +13,21 @@ using Microsoft.Extensions.Options;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
+using Shared.Contracts.Queue.Publisher;
 
 [DisallowConcurrentExecution]
 internal sealed class ProcessQueueMessagesJob : IJob
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly IMessageBus _messageBus;
+    private readonly IMessagePublisher _messageBus;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly OutboxOptions _outboxOptions;
     private readonly ILogger<ProcessQueueMessagesJob> _logger;
 
     public ProcessQueueMessagesJob(
         ApplicationDbContext dbContext,
-        IMessageBus messageBus,
+        IMessagePublisher messageBus,
         IDateTimeProvider dateTimeProvider,
         IOptions<OutboxOptions> outboxOptions,
         ILogger<ProcessQueueMessagesJob> logger)
@@ -81,7 +81,7 @@ internal sealed class ProcessQueueMessagesJob : IJob
                         Headers = new Dictionary<string, string>
                         {
                             ["event_id"] = outboxMessage.Id.ToString(),
-                            ["occurred_on"] = outboxMessage.OccurredOnUtc.ToString("O"),
+                            ["execute_at"] = outboxMessage.OccurredOnUtc.AddMinutes(15).ToString("O"),
                             ["event-type"] = eventType.AssemblyQualifiedName!
                         }
                     },

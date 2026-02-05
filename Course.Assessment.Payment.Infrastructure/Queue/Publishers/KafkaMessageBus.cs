@@ -5,10 +5,11 @@ using Course.Assessment.Payment.Application.Abstractions.Queue;
 using Course.Assessment.Payment.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Queue.Policies;
 
-namespace Course.Assessment.Payment.Infrastructure.Queue
+namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 {
-    public sealed class KafkaMessageBus : IMessageBus
+    public sealed class KafkaMessageBus : IMessagePublisher
     {
         private readonly IProducer<string, string> _producer;
         private readonly JsonSerializerOptions _serializerOptions;
@@ -22,7 +23,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
-            _retryPolicy = MessageBusRetryPolicies.Create();
+            _retryPolicy = PublisherRetryPolicies.Create();
         }
 
         public async Task PublishAsync<T>(

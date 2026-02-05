@@ -3,28 +3,29 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Course.Assessment.Order.Application.Abstractions.Queue;
-using Course.Assessment.Order.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
+using Shared.Contracts.Queue.Policies;
+using Shared.Contracts.Queue.Publisher;
 
 namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
-    public sealed class KafkaMessageBus : IMessageBus
+    public sealed class KafkaMessagePublisher : IMessagePublisher
     {
         private readonly IProducer<string, string> _producer;
         private readonly JsonSerializerOptions _serializerOptions;
         private readonly AsyncRetryPolicy _retryPolicy;
 
 
-        public KafkaMessageBus(IProducer<string, string> producer)
+        public KafkaMessagePublisher(IProducer<string, string> producer)
         {
             _producer = producer;
             _serializerOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
-            _retryPolicy = MessageBusRetryPolicies.Create();
+            _retryPolicy = PublisherRetryPolicies.Create();
         }
 
         public async Task PublishAsync<T>(

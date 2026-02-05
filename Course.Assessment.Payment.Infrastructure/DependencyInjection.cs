@@ -1,5 +1,4 @@
 ﻿using Bookify.Infrastructure.Repositories;
-using Confluent.Kafka;
 using Course.Assessment.Payment.Application.Abstractions.Data;
 using Course.Assessment.Payment.Application.Clock;
 using Course.Assessment.Payment.Domain.Abstractions;
@@ -13,9 +12,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
+using RabbitMQ.Client;
 using Shared.Contracts.Events;
 using Shared.Contracts.Events.Order;
-using Shared.Contracts.Queue;
 using Shared.Contracts.Queue.Consumer;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
 using StackExchange.Redis;
@@ -29,8 +28,21 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
-
-        AddRedis(services, configuration);
+        var queueSystem = configuration.GetSection("QueueSystem").Value;
+        switch (queueSystem)
+        {
+            case "RabbitMq":
+                AddRabbitMqConsumerDependecies(services, configuration);
+                break;
+            case "Kafka":
+                AddKafkaConsumerDependecies(services, configuration);
+                break;
+            case "RedisStreams":
+                AddRedisConsumerDependecies(services, configuration);
+                break;
+            default:
+                throw new ArgumentException(nameof(queueSystem));
+        }
 
         AddPersistence(services, configuration);
 
@@ -48,7 +60,6 @@ public static class DependencyInjection
     {
         services.AddHealthChecks()
             .AddNpgSql(configuration.GetConnectionString("PaymentDb")!);
-        //TODO: Add More
     }
 
     private static void AddBackgroundJobs(IServiceCollection services, IConfiguration configuration)
@@ -83,16 +94,42 @@ public static class DependencyInjection
 
     private static void AddConsumers(IServiceCollection services)
     {
-        
+
         services.AddScoped<IIntegrationEventHandler<OrderCreatedIntegrationEvent>, OrderCreatedIntegrationEventHandler>();
         services.AddScoped<IIntegrationEventHandler<OrderCanceledIntegrationEvent>, OrderCanceledIntegrationEventHandler>();
-        //services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
-        services.AddScoped(typeof(IMessageConsumer<>), typeof(RedisStreamConsumer<>));
-        //services.AddScoped(typeof(IRabbitMqMessageConsumer<>), typeof(RabbitMqConsumer<>));
-        //services.AddScoped(typeof(IRedisStreamConsumer<>), typeof(RedisStreamConsumer<>));
     }
 
-    private static void AddRedis(IServiceCollection services, IConfiguration configuration)
+    private static void AddRabbitMqConsumerDependecies(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<IConnectionFactory>(_ =>
+        {
+            var connection = configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException("Rabbit Mq config missing");
+            return new ConnectionFactory()
+            {
+                Uri = new Uri(connection)
+            };
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var factory = sp.GetRequiredService<IConnectionFactory>();
+            return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+        });
+
+        services.AddScoped(sp =>
+        {
+            var connection = sp.GetRequiredService<IConnection>();
+            return connection.CreateChannelAsync().GetAwaiter().GetResult();
+        });
+        services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMqConsumer<>));
+    }
+
+    private static void AddKafkaConsumerDependecies(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
+    }
+
+    private static void AddRedisConsumerDependecies(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
@@ -100,6 +137,7 @@ public static class DependencyInjection
                             throw new ArgumentNullException(nameof(configuration));
             return ConnectionMultiplexer.Connect(redisConn);
         });
+        services.AddScoped(typeof(IMessageConsumer<>), typeof(RedisStreamConsumer<>));
     }
 
     private static void AddHostedServices(IServiceCollection services)
