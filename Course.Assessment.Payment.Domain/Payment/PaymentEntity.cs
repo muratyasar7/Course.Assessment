@@ -12,10 +12,10 @@ namespace Course.Assessment.Payment.Domain.Payment
 
         public PaymentStatus Status { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? UpdatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset? UpdatedAt { get; private set; }
 
-        private readonly List<PaymentProvisionEntity> _provisions = new();
+        private readonly List<PaymentProvisionEntity> _provisions = [];
         public IReadOnlyCollection<PaymentProvisionEntity> Provisions => _provisions;
 
         private PaymentEntity() { }
@@ -23,7 +23,8 @@ namespace Course.Assessment.Payment.Domain.Payment
         public PaymentEntity(
             Guid orderId,
             decimal amount,
-            string currency)
+            string currency,
+            DateTimeOffset createdAt)
         {
             Id = Guid.NewGuid();
             OrderId = orderId;
@@ -32,12 +33,12 @@ namespace Course.Assessment.Payment.Domain.Payment
 
             PaymentReference = $"PAY-{Guid.NewGuid():N}";
             Status = PaymentStatus.Initiated;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = createdAt;
         }
 
-        public static PaymentEntity Create(Guid orderId,decimal amount,string currency)
+        public static PaymentEntity Create(Guid orderId, decimal amount, string currency, DateTimeOffset createdAt)
         {
-           return new PaymentEntity(orderId, amount, currency);
+            return new PaymentEntity(orderId, amount, currency, createdAt);
         }
 
         public PaymentProvisionEntity CreateProvision(string provider)
@@ -51,31 +52,31 @@ namespace Course.Assessment.Payment.Domain.Payment
             return provision;
         }
 
-        public void MarkProvisioned()
+        public void MarkProvisioned(DateTimeOffset dateTimeOffset)
         {
             Status = PaymentStatus.Provisioned;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = dateTimeOffset;
         }
 
-        public void MarkCaptured()
+        public void MarkCaptured(DateTimeOffset dateTimeOffset)
         {
             Status = PaymentStatus.Captured;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = dateTimeOffset;
         }
 
-        public void MarkFailed()
+        public void MarkFailed(DateTimeOffset dateTimeOffset)
         {
             Status = PaymentStatus.Failed;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = dateTimeOffset;
         }
 
-        public void Cancel()
+        public void Cancel(DateTimeOffset dateTimeOffset)
         {
             if (Status == PaymentStatus.Captured)
                 throw new InvalidOperationException("Captured payment cannot be cancelled.");
 
             Status = PaymentStatus.Cancelled;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = dateTimeOffset;
         }
     }
 

@@ -74,6 +74,7 @@ services:
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__Kafka: kafka:9092
       ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+      QueueSystem: Kafka
 
     depends_on:
       - rabbitmq
@@ -93,6 +94,7 @@ services:
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__Kafka: kafka:9092
       ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
+      QueueSystem: Kafka
     depends_on:
       - postgres
 volumes:

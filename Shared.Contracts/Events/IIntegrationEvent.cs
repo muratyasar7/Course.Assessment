@@ -6,6 +6,6 @@ namespace Shared.Contracts.Events
     {
         Guid EventId { get; }
         string EventType { get; }
-        DateTime OccurredOnUtc { get; }
+        DateTimeOffset OccurredOnUtc { get; }
     }
 }

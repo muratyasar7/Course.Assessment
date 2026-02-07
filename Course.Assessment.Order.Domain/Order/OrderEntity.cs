@@ -12,7 +12,7 @@ namespace Course.Assessment.Order.Domain.Order
         Guid customerId,
         Money amount,
         Address address,
-        DateTime createdAt)
+        DateTimeOffset createdAt)
         : base(id)
         {
             CustomerId = customerId;
@@ -28,11 +28,11 @@ namespace Course.Assessment.Order.Domain.Order
         public Guid CustomerId { get; private set; }
         public Money Amount { get; private set; }
         public Address Address { get; private set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
 
 
 
-        public static OrderEntity Create(Guid id, Guid customerId, Money amount, Address address, DateTime createdAt)
+        public static OrderEntity Create(Guid id, Guid customerId, Money amount, Address address, DateTimeOffset createdAt)
         {
             var newOrder = new OrderEntity(id, customerId, amount, address, createdAt);
             newOrder.RaiseDomainEvent(new OrderCreatedDomainEvent(id, amount.Amount, amount.Currency.Code));

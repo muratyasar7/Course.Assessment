@@ -7,7 +7,6 @@ using Course.Assessment.Order.Domain.Order;
 using Course.Assessment.Order.Infrastructure.Clock;
 using Course.Assessment.Order.Infrastructure.Queue.Publisher;
 using Course.Assessment.Order.Infrastructure.Repositories;
-using Course.Assessment.Payment.Infrastructure.Queue.Publishers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

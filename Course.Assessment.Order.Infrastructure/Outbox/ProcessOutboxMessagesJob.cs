@@ -20,7 +20,7 @@ using Shared.Contracts.Queue.Publisher;
 internal sealed class ProcessQueueMessagesJob : IJob
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly IMessagePublisher _messageBus;
+    private readonly IMessagePublisher _messagePublisher;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly OutboxOptions _outboxOptions;
     private readonly ILogger<ProcessQueueMessagesJob> _logger;
@@ -33,7 +33,7 @@ internal sealed class ProcessQueueMessagesJob : IJob
         ILogger<ProcessQueueMessagesJob> logger)
     {
         _dbContext = dbContext;
-        _messageBus = messageBus;
+        _messagePublisher = messageBus;
         _dateTimeProvider = dateTimeProvider;
         _outboxOptions = outboxOptions.Value;
         _logger = logger;
@@ -72,16 +72,15 @@ internal sealed class ProcessQueueMessagesJob : IJob
                         outboxMessage.Content,
                         eventType)!;
 
-                await _messageBus.PublishAsync(
+                await _messagePublisher.PublishAsync(
                     integrationEvent,
                     new MessagePublishOptions
                     {
-                        Topic = eventType.Name.Replace("Event", "Topic"),
+                        Destination = eventType.Name.Replace("Event", "Topic"),
                         Key = outboxMessage.Id.ToString(),
                         Headers = new Dictionary<string, string>
                         {
                             ["event_id"] = outboxMessage.Id.ToString(),
-                            ["execute_at"] = outboxMessage.OccurredOnUtc.AddMinutes(15).ToString("O"),
                             ["event-type"] = eventType.AssemblyQualifiedName!
                         }
                     },

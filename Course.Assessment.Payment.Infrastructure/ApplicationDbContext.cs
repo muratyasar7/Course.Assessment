@@ -60,8 +60,7 @@ namespace Course.Assessment.Payment.Infrastructure
 
                     return domainEvents;
                 })
-                .Select(domainEvent => new OutboxMessageEntity(
-                    Guid.NewGuid(),
+                .Select(domainEvent => OutboxMessageEntity.Create(
                     _dateTimeProvider.UtcNow,
                     domainEvent.GetType().AssemblyQualifiedName!,
                     JsonSerializer.Serialize(domainEvent)))

@@ -1,10 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Course.Assessment.Payment.Domain.Abstractions;
+using Microsoft.Extensions.Caching.Memory;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Shared.Contracts.Events;
 using Shared.Contracts.Queue.Consumer;
+using Shared.Contracts.Queue.Idempotency;
 
 public sealed class RabbitMqConsumer<TEvent>
     : IMessageConsumer<TEvent>, IDisposable
@@ -12,8 +14,10 @@ public sealed class RabbitMqConsumer<TEvent>
 {
     private readonly IChannel _channel;
     private readonly JsonSerializerOptions _serializerOptions;
+    private readonly IIdempotencyStore _idempotencyStore;
+    private readonly IMemoryCache _memoryCache;
 
-    public RabbitMqConsumer(IChannel channel)
+    public RabbitMqConsumer(IChannel channel, IIdempotencyStore idempotencyStore, IMemoryCache memoryCache)
     {
         _channel = channel;
 
@@ -21,6 +25,8 @@ public sealed class RabbitMqConsumer<TEvent>
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+        _idempotencyStore = idempotencyStore;
+        _memoryCache = memoryCache;
     }
 
     public async Task ConsumeAsync(
@@ -63,11 +69,32 @@ public sealed class RabbitMqConsumer<TEvent>
                     json,
                     _serializerOptions)!;
 
+
+                if (_memoryCache.TryGetValue(message.EventId, out var _))
+                {
+                    await _channel.BasicNackAsync(
+                        deliveryTag: args.DeliveryTag,
+                        multiple: false,
+                        requeue: false);
+                    return;
+                }
+
+                if (await _idempotencyStore.ExistsAsync(message.EventId))
+                {
+                    await _channel.BasicNackAsync(
+                        deliveryTag: args.DeliveryTag,
+                        multiple: false,
+                        requeue: false);
+                    return;
+                }
+                    
+
                 await handler(message, cancellationToken);
 
                 await _channel.BasicAckAsync(
                     deliveryTag: args.DeliveryTag,
                     multiple: false);
+
             }
             catch (OperationCanceledException)
             {

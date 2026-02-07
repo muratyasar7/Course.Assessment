@@ -1,22 +1,22 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Confluent.Kafka;
-using Course.Assessment.Payment.Application.Abstractions.Queue;
-using Course.Assessment.Payment.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
 using Shared.Contracts.Queue.Policies;
+using Shared.Contracts.Queue.Publisher;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 {
-    public sealed class KafkaMessageBus : IMessagePublisher
+    public sealed class KafkaMessagePublisher : IMessagePublisher
     {
         private readonly IProducer<string, string> _producer;
         private readonly JsonSerializerOptions _serializerOptions;
         private readonly AsyncRetryPolicy _retryPolicy;
 
 
-        public KafkaMessageBus(IProducer<string, string> producer)
+        public KafkaMessagePublisher(IProducer<string, string> producer)
         {
             _producer = producer;
             _serializerOptions = new JsonSerializerOptions
@@ -50,7 +50,6 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
                         kafkaMessage.Headers.Add(header.Key, Encoding.UTF8.GetBytes(header.Value));
                     }
                 }
-
                 await _producer.ProduceAsync(
                     options.Destination,
                     kafkaMessage,

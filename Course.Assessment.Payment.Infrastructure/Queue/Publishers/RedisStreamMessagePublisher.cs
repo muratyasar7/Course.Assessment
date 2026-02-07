@@ -1,19 +1,19 @@
 ﻿using System.Text.Json;
-using Course.Assessment.Payment.Application.Abstractions.Queue;
-using Course.Assessment.Payment.Domain.Options;
 using Polly.Retry;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
 using Shared.Contracts.Queue.Policies;
+using Shared.Contracts.Queue.Publisher;
 using StackExchange.Redis;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 {
-    public sealed class RedisStreamMessageBus : IMessagePublisher
+    public sealed class RedisStreamMessagePublisher : IMessagePublisher
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly AsyncRetryPolicy _retryPolicy;
 
-        public RedisStreamMessageBus(IConnectionMultiplexer redis)
+        public RedisStreamMessagePublisher(IConnectionMultiplexer redis)
         {
             _redis = redis;
             _retryPolicy = PublisherRetryPolicies.Create();

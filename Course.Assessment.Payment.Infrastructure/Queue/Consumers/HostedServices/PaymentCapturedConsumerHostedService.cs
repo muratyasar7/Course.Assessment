@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Contracts.Events;
 using Shared.Contracts.Events.Order;
+using Shared.Contracts.Events.Payment;
 using Shared.Contracts.Queue.Consumer;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedServices
@@ -24,7 +25,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedService
 
             var consumer =
                 consumerScope.ServiceProvider
-                    .GetRequiredService<IMessageConsumer<OrderCanceledIntegrationEvent>>();
+                    .GetRequiredService<IMessageConsumer<PaymentCheckIntegrationEvent>>();
 
             await consumer.ConsumeAsync(async (evt, ct) =>
             {
@@ -33,7 +34,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedService
                 var handler =
                     messageScope.ServiceProvider
                         .GetRequiredService<
-                            IIntegrationEventHandler<OrderCanceledIntegrationEvent>>();
+                            IIntegrationEventHandler<PaymentCheckIntegrationEvent>>();
 
                 await handler.HandleAsync(evt, ct);
 

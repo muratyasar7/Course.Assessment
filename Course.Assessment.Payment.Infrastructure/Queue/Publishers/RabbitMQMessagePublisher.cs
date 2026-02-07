@@ -1,15 +1,16 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Course.Assessment.Payment.Application.Abstractions.Queue;
-using Course.Assessment.Payment.Domain.Options;
 using Polly.Retry;
 using RabbitMQ.Client;
 using Shared.Contracts.Events;
+using Shared.Contracts.Options;
 using Shared.Contracts.Queue.Policies;
+using Shared.Contracts.Queue.Publisher;
+using StackExchange.Redis;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 {
-    public sealed class RabbitMqMessageBus : IMessagePublisher
+    public sealed class RabbitMQMessagePublisher : IMessagePublisher
     {
         private readonly IChannel _channel;
         private readonly AsyncRetryPolicy _retryPolicy;
@@ -17,7 +18,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
 
 
 
-        public RabbitMqMessageBus(IChannel channel)
+        public RabbitMQMessagePublisher(IChannel channel)
         {
             _serializerOptions = new JsonSerializerOptions
             {
@@ -47,17 +48,21 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
                     Persistent = true,
                     MessageId = message.EventId.ToString(),
                     ContentType = "application/json",
+                    Headers = new Dictionary<string, object?>()
                 };
                 properties.MessageId = message.EventId.ToString();
                 properties.Type = message.EventType;
                 properties.Timestamp = new AmqpTimestamp(
-                    new DateTimeOffset(message.OccurredOnUtc).ToUnixTimeSeconds());
+                    message.OccurredOnUtc.ToUnixTimeSeconds());
 
                 if (options.Headers != null)
                 {
                     properties.Headers = options.Headers
                         .ToDictionary(k => k.Key, v => (object?)v.Value);
                 }
+                if (options.Delay.HasValue)
+                    properties.Headers["x-delay"] = (int)options.Delay.Value.TotalMilliseconds;
+
 
                 await _channel.BasicPublishAsync(
                     exchange: options.Destination,

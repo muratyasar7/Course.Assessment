@@ -2,16 +2,17 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Contracts.Events;
+using Shared.Contracts.Events.Order;
 using Shared.Contracts.Queue.Consumer;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
 
 namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedServices
 {
-    public sealed class OrderCreatedConsumerHostedService : BackgroundService
+    public sealed class OrderCanceledConsumerHostedService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public OrderCreatedConsumerHostedService(IServiceScopeFactory scopeFactory)
+        public OrderCanceledConsumerHostedService(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
@@ -22,7 +23,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedService
 
             var consumer =
                 consumerScope.ServiceProvider
-                    .GetRequiredService<IMessageConsumer<OrderCreatedIntegrationEvent>>();
+                    .GetRequiredService<IMessageConsumer<OrderCanceledIntegrationEvent>>();
 
             await consumer.ConsumeAsync(async (evt, ct) =>
             {
@@ -31,7 +32,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedService
                 var handler =
                     messageScope.ServiceProvider
                         .GetRequiredService<
-                            IIntegrationEventHandler<OrderCreatedIntegrationEvent>>();
+                            IIntegrationEventHandler<OrderCanceledIntegrationEvent>>();
 
                 await handler.HandleAsync(evt, ct);
 

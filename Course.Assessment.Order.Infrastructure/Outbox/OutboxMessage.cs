@@ -2,25 +2,18 @@
 
 namespace Course.Assessment.Order.Infrastructure.Outbox;
 
-public sealed class OutboxMessage
+public sealed class OutboxMessage(
+    Guid id,
+    DateTimeOffset occurredOnUtc,
+    string type,
+    string content)
 {
-    public OutboxMessage(Guid id, DateTime occurredOnUtc, string type, string content)
-    {
-        Id = id;
-        OccurredOnUtc = occurredOnUtc;
-        Content = content;
-        Type = type;
-    }
+    public Guid Id { get; init; } = id;
+    public DateTimeOffset OccurredOnUtc { get; init; } = occurredOnUtc;
+    public string Type { get; init; } = type;
+    public string Content { get; init; } = content;
 
-    public Guid Id { get; init; }
-
-    public DateTime OccurredOnUtc { get; init; }
-
-    public string Type { get; init; }
-
-    public string Content { get; init; }
-
-    public DateTime? ProcessedOnUtc { get; init; }
-
+    public DateTimeOffset? ProcessedOnUtc { get; init; }
     public string Error { get; init; }
 }
+

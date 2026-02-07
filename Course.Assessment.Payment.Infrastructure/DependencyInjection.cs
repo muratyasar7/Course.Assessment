@@ -5,17 +5,24 @@ using Course.Assessment.Payment.Domain.Abstractions;
 using Course.Assessment.Payment.Domain.Payment;
 using Course.Assessment.Payment.Infrastructure.Clock;
 using Course.Assessment.Payment.Infrastructure.Order;
+using Course.Assessment.Payment.Infrastructure.Payment;
 using Course.Assessment.Payment.Infrastructure.Queue.Consumers;
 using Course.Assessment.Payment.Infrastructure.Queue.Consumers.HostedServices;
+using Course.Assessment.Payment.Infrastructure.Queue.DelayedPublishers;
+using Course.Assessment.Payment.Infrastructure.Queue.Idempotency;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Analytics.Infrastructure.Outbox;
 using Quartz;
+using Quartz.Simpl;
 using RabbitMQ.Client;
 using Shared.Contracts.Events;
 using Shared.Contracts.Events.Order;
+using Shared.Contracts.Events.Payment;
 using Shared.Contracts.Queue.Consumer;
+using Shared.Contracts.Queue.Idempotency;
+using Shared.Contracts.Queue.Publisher;
 using Shared.Contracts.QueueMessageEventModels.v1.Order;
 using StackExchange.Redis;
 
@@ -27,7 +34,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddTransient<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         var queueSystem = configuration.GetSection("QueueSystem").Value;
         switch (queueSystem)
         {
@@ -35,7 +42,7 @@ public static class DependencyInjection
                 AddRabbitMqConsumerDependecies(services, configuration);
                 break;
             case "Kafka":
-                AddKafkaConsumerDependecies(services, configuration);
+                AddKafkaConsumerDependecies(services);
                 break;
             case "RedisStreams":
                 AddRedisConsumerDependecies(services, configuration);
@@ -44,9 +51,15 @@ public static class DependencyInjection
                 throw new ArgumentException(nameof(queueSystem));
         }
 
+        AddQuartz(services, configuration);
+
+        AddIdempotecyDependecies(services);
+
         AddPersistence(services, configuration);
 
         AddConsumers(services);
+
+        AddDelayedPublisher(services);
 
         AddHostedServices(services);
 
@@ -97,13 +110,14 @@ public static class DependencyInjection
 
         services.AddScoped<IIntegrationEventHandler<OrderCreatedIntegrationEvent>, OrderCreatedIntegrationEventHandler>();
         services.AddScoped<IIntegrationEventHandler<OrderCanceledIntegrationEvent>, OrderCanceledIntegrationEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<PaymentCheckIntegrationEvent>, PaymentCheckIntegrationEventHandler>();
     }
 
     private static void AddRabbitMqConsumerDependecies(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IConnectionFactory>(_ =>
         {
-            var connection = configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException("Rabbit Mq config missing");
+            var connection = configuration.GetConnectionString("RabbitMq") ?? throw new ArgumentNullException(nameof(configuration));
             return new ConnectionFactory()
             {
                 Uri = new Uri(connection)
@@ -124,7 +138,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMqConsumer<>));
     }
 
-    private static void AddKafkaConsumerDependecies(IServiceCollection services, IConfiguration configuration)
+    private static void AddKafkaConsumerDependecies(IServiceCollection services)
     {
         services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
     }
@@ -146,6 +160,39 @@ public static class DependencyInjection
         services.AddScoped<OrderCanceledIntegrationEventHandler>();
         services.AddHostedService<OrderCreatedConsumerHostedService>();
         services.AddHostedService<OrderCanceledConsumerHostedService>();
+    }
+
+    private static void AddIdempotecyDependecies(IServiceCollection services)
+    {
+        services.AddMemoryCache();
+        services.AddSingleton<IIdempotencyStore, RedisIdempotencyStore>();
+    }
+
+    private static void AddQuartz(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddQuartz(q =>
+        {
+            q.UseJobFactory<MicrosoftDependencyInjectionJobFactory>();
+
+            q.UsePersistentStore(s =>
+            {
+                s.UsePostgres(postgres =>
+                {
+                    var connectionString= configuration.GetConnectionString("PaymentDb") ?? throw new ArgumentNullException(nameof(configuration));
+                    postgres.ConnectionString = $"{connectionString};SearchPath=quartz"; 
+                    postgres.TablePrefix = "quartz.qrtz_";
+                    
+                });
+                
+                s.UseNewtonsoftJsonSerializer();
+            });
+        });
+        services.AddQuartzHostedService(opt => opt.WaitForJobsToComplete = true);
+    }
+
+    private static void AddDelayedPublisher(IServiceCollection services)
+    {
+        services.AddScoped<IDelayedMessagePublisher, QuartzDelayedMessagePublisher>();
     }
 
 }

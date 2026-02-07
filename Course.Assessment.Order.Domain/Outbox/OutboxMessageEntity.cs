@@ -2,25 +2,36 @@
 {
     public sealed class OutboxMessageEntity
     {
-        public OutboxMessageEntity(DateTime occurredOnUtc, string type, string content)
+        private OutboxMessageEntity(DateTimeOffset occurredOnUtc, string type, string content, DateTimeOffset? executeAt = null)
         {
             Id = Guid.NewGuid();
             OccurredOnUtc = occurredOnUtc;
             Content = content;
             Type = type;
+            ExecuteAt = executeAt;
         }
+        private OutboxMessageEntity()
+        {
+            
+        }
+
+        public static OutboxMessageEntity Create(DateTimeOffset occurredOnUtc, string type, string content, DateTimeOffset? executeAt = null)
+        {
+            return new OutboxMessageEntity(occurredOnUtc, type, content, executeAt);
+        }
+
 
         public Guid Id { get; init; }
 
-        public DateTime ExecuteAt { get; set; }
+        public DateTimeOffset? ExecuteAt { get; set; }
 
-        public DateTime OccurredOnUtc { get; init; }
+        public DateTimeOffset OccurredOnUtc { get; init; }
 
-        public string Type { get; init; }
+        public string Type { get; init; } = "";
 
-        public string Content { get; init; }
+        public string Content { get; init; } = "";
 
-        public DateTime? ProcessedOnUtc { get; set; }
+        public DateTimeOffset? ProcessedOnUtc { get; set; }
 
         public OutboxMessageStatus Status { get; set; }
 

@@ -57,7 +57,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
                 }
 
                 await _producer.ProduceAsync(
-                    options.Topic,
+                    options.Destination,
                     kafkaMessage,
                     ct);
             }, cancellationToken);

@@ -6,9 +6,8 @@ using Course.Assessment.Order.Domain.Order.Events;
 using Course.Assessment.Order.Domain.Outbox;
 using MediatR;
 using Shared.Contracts.Events.Order;
-using Shared.Contracts.QueueMessageEventModels.v1.Order;
 
-namespace Course.Assessment.Order.Application.Order.CreateOrder
+namespace Course.Assessment.Order.Application.Order.CancelOrder
 {
     internal sealed class OrderCanceledDomainEventHandler : INotificationHandler<OrderCanceledDomainEvent>
     {
@@ -31,14 +30,14 @@ namespace Course.Assessment.Order.Application.Order.CreateOrder
                             nameof(OrderCanceledIntegrationEvent),
                             _dateTimeProvider.UtcNow);
             _dbContext.OutboxMessages.Add(
-                new OutboxMessageEntity(
+                OutboxMessageEntity.Create(
                     _dateTimeProvider.UtcNow,
                     orderCreatedIntegrationEvent.GetType().AssemblyQualifiedName!,
                     JsonSerializer.Serialize(
                         orderCreatedIntegrationEvent
                     )
                 ));
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         }
     }

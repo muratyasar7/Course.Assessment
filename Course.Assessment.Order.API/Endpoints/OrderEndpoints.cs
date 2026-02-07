@@ -20,11 +20,11 @@ namespace Course.Assessment.Order.API.Endpoints
             var result = await sender.Send(command);
             return Results.Ok(result);
         }
-        public static async Task<IResult> CancelOrder([FromHeader] string idempotencyKey, [FromRoute] Guid orderId, ISender sender, CancellationToken cancellationToken)
+        public static async Task<IResult> CancelOrder([FromRoute] Guid orderId, ISender sender, CancellationToken cancellationToken)
         {
-            var command = new CancelOrderCommand(idempotencyKey, orderId);
+            var command = new CancelOrderCommand(orderId);
             var result = await sender.Send(command);
-            return Results.Created();
+            return Results.Ok();
         }
     }
 }

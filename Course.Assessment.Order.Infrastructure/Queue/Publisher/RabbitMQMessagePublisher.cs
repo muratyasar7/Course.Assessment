@@ -12,7 +12,7 @@ using Shared.Contracts.Queue.Policies;
 using Shared.Contracts.Queue.Publisher;
 using StackExchange.Redis;
 
-namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
+namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
 {
     public sealed class RabbitMQMessagePublisher : IMessagePublisher
     {
@@ -53,14 +53,14 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
                     Persistent = true,
                     MessageId = message.EventId.ToString(),
                     ContentType = "application/json",
-                    ContentEncoding = "utf-8"
+                    ContentEncoding = "utf-8",
+                    DeliveryMode = DeliveryModes.Persistent,
+                    Expiration = "60000"
                 };
-                properties.DeliveryMode = DeliveryModes.Persistent;
-                properties.Expiration = "60000";
                 properties.MessageId = message.EventId.ToString();
                 properties.Type = message.EventType;
                 properties.Timestamp = new AmqpTimestamp(
-                    new DateTimeOffset(message.OccurredOnUtc).ToUnixTimeSeconds());
+                    message.OccurredOnUtc.ToUnixTimeSeconds());
 
                 if (options.Headers != null)
                 {

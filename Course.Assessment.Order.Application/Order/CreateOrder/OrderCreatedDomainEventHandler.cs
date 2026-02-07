@@ -14,15 +14,13 @@ namespace Course.Assessment.Order.Application.Order.CreateOrder
     {
         private readonly IApplicationDbContext _dbContext;
         private readonly IDateTimeProvider _dateTimeProvider;
-        private readonly IOrderRepository _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public OrderCreatedDomainEventHandler(IApplicationDbContext dbContext, IDateTimeProvider dateTimeProvider, IUnitOfWork unitOfWork, IOrderRepository orderRepository)
+        public OrderCreatedDomainEventHandler(IApplicationDbContext dbContext, IDateTimeProvider dateTimeProvider, IUnitOfWork unitOfWork)
         {
             _dbContext = dbContext;
             _dateTimeProvider = dateTimeProvider;
             _unitOfWork = unitOfWork;
-            _orderRepository = orderRepository;
         }
 
         public async Task Handle(OrderCreatedDomainEvent notification, CancellationToken cancellationToken)
@@ -35,14 +33,15 @@ namespace Course.Assessment.Order.Application.Order.CreateOrder
                             nameof(OrderCreatedIntegrationEvent),
                             _dateTimeProvider.UtcNow);
             _dbContext.OutboxMessages.Add(
-                new OutboxMessageEntity(
+                OutboxMessageEntity.Create(
                     _dateTimeProvider.UtcNow,
                     orderCreatedIntegrationEvent.GetType().AssemblyQualifiedName!,
                     JsonSerializer.Serialize(
                         orderCreatedIntegrationEvent
-                    )
+                    ),
+                    _dateTimeProvider.UtcNow.AddMinutes(15)
                 ));
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         }
     }

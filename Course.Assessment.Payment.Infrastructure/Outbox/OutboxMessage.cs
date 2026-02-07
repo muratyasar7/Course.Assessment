@@ -2,7 +2,7 @@
 
 public sealed class OutboxMessage
 {
-    public OutboxMessage(Guid id, DateTime occurredOnUtc, string type, string content)
+    public OutboxMessage(Guid id, DateTimeOffset occurredOnUtc, string type, string content)
     {
         Id = id;
         OccurredOnUtc = occurredOnUtc;
@@ -12,13 +12,13 @@ public sealed class OutboxMessage
 
     public Guid Id { get; init; }
 
-    public DateTime OccurredOnUtc { get; init; }
+    public DateTimeOffset OccurredOnUtc { get; init; }
 
     public string Type { get; init; }
 
     public string Content { get; init; }
 
-    public DateTime? ProcessedOnUtc { get; init; }
+    public DateTimeOffset? ProcessedOnUtc { get; init; }
 
     public string? Error { get; init; }
 }

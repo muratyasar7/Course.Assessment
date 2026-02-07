@@ -23,5 +23,9 @@
 		<ProjectReference Include="..\Course.Assessment.Payment.Infrastructure\Course.Assessment.Payment.Infrastructure.csproj" />
 		<ProjectReference Include="..\Course.Assessment.ServiceDefaults\Course.Assessment.ServiceDefaults.csproj" />
 	</ItemGroup>
-
+	<ItemGroup>
+		<None Update="QuartzTables.sql">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>

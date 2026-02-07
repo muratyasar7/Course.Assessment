@@ -1,10 +1,13 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Confluent.Kafka;
 using Course.Assessment.Payment.Domain.Abstractions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Polly.Retry;
 using Shared.Contracts.Events;
 using Shared.Contracts.Queue.Consumer;
+using Shared.Contracts.Queue.Idempotency;
 using Shared.Contracts.Queue.Policies;
 using StackExchange.Redis;
 
@@ -19,21 +22,27 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
     private readonly string _consumerName;
     private readonly JsonSerializerOptions _serializerOptions;
     private readonly AsyncRetryPolicy _retryPolicy;
+    private readonly IIdempotencyStore _idempotencyStore;
+    private readonly IMemoryCache _memoryCache;
 
 
     public RedisStreamConsumer(
         IConfiguration configuration,
-        IConnectionMultiplexer redis)
+        IConnectionMultiplexer redis,
+        IIdempotencyStore idempotencyStore,
+        IMemoryCache memoryCache)
     {
         _serializerOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
         _redis = redis;
-        _streamName = typeof(TEvent).Name.Replace("Event","Topic");
+        _streamName = typeof(TEvent).Name.Replace("Event", "Topic");
         _groupName = "PaymentGroup";
         _consumerName = $"{Environment.MachineName}-{Guid.NewGuid()}";
         _retryPolicy = ConsumerRetryPolicies.Create();
+        _idempotencyStore = idempotencyStore;
+        _memoryCache = memoryCache;
     }
 
     public async Task ConsumeAsync(
@@ -72,40 +81,44 @@ public sealed class RedisStreamConsumer<TEvent> : IMessageConsumer<TEvent> where
 
                 foreach (var entry in entries)
                 {
-                    try
+
+                    var json = entry.Values
+                        .First(x => x.Name == "payload")
+                        .Value
+                        .ToString();
+
+                    var eventTypeName = entry.Values
+                        .First(x => x.Name == "event-type")
+                        .Value
+                        .ToString();
+
+                    if (eventTypeName is null)
+                        throw new InvalidOperationException("event-type header missing");
+
+                    var eventType = Type.GetType(eventTypeName, throwOnError: true)!;
+                    var message = JsonSerializer.Deserialize(
+                           json,
+                           eventType, _serializerOptions)!;
+                    var evt = (TEvent)message;
+
+                    if (_memoryCache.TryGetValue(evt.EventId, out _))
                     {
-                        var json = entry.Values
-                            .First(x => x.Name == "payload")
-                            .Value
-                            .ToString();
-
-                        var eventTypeName = entry.Values
-                            .First(x => x.Name == "event-type")
-                            .Value
-                            .ToString();
-
-                        if (eventTypeName is null)
-                            throw new InvalidOperationException("event-type header missing");
-
-                        var eventType = Type.GetType(eventTypeName, throwOnError: true)!;
-                        var message = JsonSerializer.Deserialize(
-                               json,
-                               eventType, _serializerOptions)!;
-
-                        await _retryPolicy.ExecuteAsync(async ct =>
-                        {
-                            await handler((TEvent)message, ct);
-                        }, cancellationToken);
-                        await db.StreamAcknowledgeAsync(
-                            _streamName,
-                            _groupName,
-                            entry.Id);
+                        await db.StreamAcknowledgeAsync(_streamName, _groupName, entry.Id);
+                        continue;
                     }
-                    catch
+
+                    if (await _idempotencyStore.ExistsAsync(evt.EventId))
                     {
-                        // ACK yok → message pending kalır
-                        // retry / dead-letter burada
+                        await db.StreamAcknowledgeAsync(_streamName, _groupName, entry.Id);
+                        continue;
                     }
+
+                    await _retryPolicy.ExecuteAsync(async ct =>
+                    {
+                        await handler(evt, ct);
+                    }, cancellationToken);
+
+                    await db.StreamAcknowledgeAsync(_streamName, _groupName, entry.Id);
                 }
             }
             catch (OperationCanceledException)

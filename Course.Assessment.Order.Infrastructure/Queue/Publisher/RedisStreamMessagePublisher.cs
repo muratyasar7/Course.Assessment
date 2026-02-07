@@ -57,7 +57,7 @@ namespace Course.Assessment.Order.Infrastructure.Queue.Publisher
                 var result = values.ToArray();
 
                 await db.StreamAddAsync(
-                    options.Topic,
+                    options.Destination,
                     result);
             });
 

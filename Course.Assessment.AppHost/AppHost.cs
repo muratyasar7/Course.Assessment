@@ -31,10 +31,12 @@ var paymentDb = postgres.AddDatabase("PaymentDb", databaseName: "payment");
 
 
 var orderApi = builder.AddProject<Projects.Course_Assessment_Order_API>("course-assesment-orderapi")
+    .WithEnvironment("QueueSystem", queueSystem)
     .WithReference(orderDb)
     .WaitFor(postgres);
 
 var paymentApi = builder.AddProject<Projects.Course_Assessment_Payment_API>("course-assesment-paymentapi")
+    .WithEnvironment("QueueSystem", queueSystem)
     .WithReference(paymentDb)
     .WaitFor(postgres);
 

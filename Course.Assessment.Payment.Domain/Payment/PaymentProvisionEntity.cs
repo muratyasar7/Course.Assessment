@@ -12,8 +12,8 @@ namespace Course.Assessment.Payment.Domain.Payment
 
         public ProvisionStatus Status { get; private set; }
 
-        public DateTime RequestedAt { get; private set; }
-        public DateTime? CompletedAt { get; private set; }
+        public DateTimeOffset RequestedAt { get; private set; }
+        public DateTimeOffset? CompletedAt { get; private set; }
 
         private PaymentProvisionEntity() { }
     
@@ -29,13 +29,13 @@ namespace Course.Assessment.Payment.Domain.Payment
 
             ProvisionReference = $"PRV-{Guid.NewGuid():N}";
             Status = ProvisionStatus.Requested;
-            RequestedAt = DateTime.UtcNow;
+            RequestedAt = DateTimeOffset.UtcNow;
         }
 
         public void Authorize()
         {
             Status = ProvisionStatus.Authorized;
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = DateTimeOffset.UtcNow;
         }
 
         public void Capture()
@@ -44,19 +44,19 @@ namespace Course.Assessment.Payment.Domain.Payment
                 throw new InvalidOperationException("Provision not authorized.");
 
             Status = ProvisionStatus.Captured;
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = DateTimeOffset.UtcNow;
         }
 
         public void Cancel()
         {
             Status = ProvisionStatus.Cancelled;
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = DateTimeOffset.UtcNow;
         }
 
         public void Fail()
         {
             Status = ProvisionStatus.Failed;
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = DateTimeOffset.UtcNow;
         }
     }
 
