@@ -25,21 +25,22 @@ namespace Course.Assessment.Order.Application.Order.CreateOrder
 
         public async Task Handle(OrderCreatedDomainEvent notification, CancellationToken cancellationToken)
         {
+            var date = _dateTimeProvider.UtcNow;
             var orderCreatedIntegrationEvent = new OrderCreatedIntegrationEvent(
                             notification.OrderId,
                             notification.Amount,
                             notification.Currency,
+                            date.AddMinutes(15),
                             Guid.NewGuid(),
                             nameof(OrderCreatedIntegrationEvent),
-                            _dateTimeProvider.UtcNow);
+                            date);
             _dbContext.OutboxMessages.Add(
                 OutboxMessageEntity.Create(
-                    _dateTimeProvider.UtcNow,
+                    date,
                     orderCreatedIntegrationEvent.GetType().AssemblyQualifiedName!,
                     JsonSerializer.Serialize(
                         orderCreatedIntegrationEvent
-                    ),
-                    _dateTimeProvider.UtcNow.AddMinutes(15)
+                    )
                 ));
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

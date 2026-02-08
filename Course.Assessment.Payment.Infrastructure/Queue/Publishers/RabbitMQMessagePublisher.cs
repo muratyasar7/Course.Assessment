@@ -60,8 +60,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.Publishers
                     properties.Headers = options.Headers
                         .ToDictionary(k => k.Key, v => (object?)v.Value);
                 }
-                if (options.Delay.HasValue)
-                    properties.Headers["x-delay"] = (int)options.Delay.Value.TotalMilliseconds;
+
 
 
                 await _channel.BasicPublishAsync(

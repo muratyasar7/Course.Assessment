@@ -60,7 +60,7 @@ namespace Course.Assessment.Payment.Infrastructure.Order
             await _unitOfWork.SaveChangesAsync(ct);
 
             var checkEvent = new PaymentCheckIntegrationEvent(payment.Id, Guid.NewGuid(), typeof(PaymentCheckIntegrationEvent).AssemblyQualifiedName!, _dateTimeProvider.UtcNow);
-            await _delayedMessagePublisher.PublishAsync(checkEvent, @event.OccurredOnUtc,ct); //TODO: Domain Event 
+            await _delayedMessagePublisher.PublishAsync(checkEvent, @event.PaymentExecuteAt, ct); //TODO: Domain Event 
 
             _logger.LogInformation(
                 "Payment created. PaymentId={PaymentId}, OrderId={OrderId}",

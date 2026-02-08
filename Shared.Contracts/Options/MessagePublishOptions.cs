@@ -5,6 +5,5 @@
         public string Destination { get; init; } = default!;
         public string? Key { get; init; }
         public IDictionary<string, string>? Headers { get; init; }
-        public TimeSpan? Delay { get; init; }
     }
 }

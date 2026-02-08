@@ -29,7 +29,7 @@ namespace Course.Assessment.Payment.Infrastructure.Queue.DelayedPublishers
 
             var trigger = TriggerBuilder.Create()
                 .WithIdentity($"trig-{typeof(T).Name}-{guid}")
-                .StartAt(scheduleTime.AddMinutes(1)) 
+                .StartAt(scheduleTime) 
                 .Build();
             if (!scheduler.IsStarted)
             {
