@@ -28,7 +28,6 @@ public static class DependencyInjection
 
         var queueSystem = configuration.GetSection("QueueSystem").Value;
 
-
         switch (queueSystem)
         {
             case "RabbitMq":

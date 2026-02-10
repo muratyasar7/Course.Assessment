@@ -18,6 +18,9 @@
   <Folder Name="/Shared/">
     <Project Path="src/Shared/Shared.Contracts/Shared.Contracts.csproj" Id="d0e34f45-d52d-45bf-aa46-027d0b8e4d4a" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>

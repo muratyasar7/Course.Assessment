@@ -22,6 +22,13 @@ switch (queueSystem)
     default:
         throw new ArgumentException(nameof(queueSystem));
 }
+if (redis == null)
+{
+    redis = builder.AddRedis("Redis", 6379).WithPassword(null).WithDataVolume();
+    builder.AddContainer("redisinsight", "redis/redisinsight:latest")
+        .WithHttpEndpoint(port: 5540, targetPort: 5540)
+        .WithReference(redis);
+}
 var postgres = builder.AddPostgres("Database").WithPgAdmin().WithDataVolume();
 
 
@@ -45,22 +52,36 @@ switch (queueSystem)
     case "RabbitMq":
         orderApi.WithReference(rabbitmq!);
         orderApi.WaitFor(rabbitmq!);
+        orderApi.WithReference(redis!);
+        orderApi.WaitFor(redis!);
         paymentApi.WithReference(rabbitmq!);
         paymentApi.WaitFor(rabbitmq!);
+        paymentApi.WithReference(redis!);
+        paymentApi.WaitFor(redis!);
         break;
     case "Kafka":
         orderApi.WithReference(kafka!);
         orderApi.WaitFor(kafka!);
+        orderApi.WithReference(redis!);
+        orderApi.WaitFor(redis!);
         paymentApi.WithReference(kafka!);
         paymentApi.WaitFor(kafka!);
+        paymentApi.WithReference(redis!);
+        paymentApi.WaitFor(redis!);
         break;
     case "RedisStreams":
         orderApi.WithReference(redis!);
         orderApi.WaitFor(redis!);
+        orderApi.WithReference(redis!);
+        orderApi.WaitFor(redis!);
+        paymentApi.WithReference(redis!);
+        paymentApi.WaitFor(redis!);
         paymentApi.WithReference(redis!);
         paymentApi.WaitFor(redis!);
         break;
     default:
         throw new ArgumentException(nameof(queueSystem));
+
+
 }
 builder.Build().Run();

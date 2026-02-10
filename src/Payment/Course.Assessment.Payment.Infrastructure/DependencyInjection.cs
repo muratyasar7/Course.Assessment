@@ -35,7 +35,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-        AddRedis(services,configuration);
+        
         var queueSystem = configuration.GetSection("QueueSystem").Value;
         switch (queueSystem)
         {
@@ -51,7 +51,7 @@ public static class DependencyInjection
             default:
                 throw new ArgumentException(nameof(queueSystem));
         }
-
+        AddRedis(services, configuration);
         AddQuartz(services, configuration);
 
         AddIdempotecyDependecies(services);

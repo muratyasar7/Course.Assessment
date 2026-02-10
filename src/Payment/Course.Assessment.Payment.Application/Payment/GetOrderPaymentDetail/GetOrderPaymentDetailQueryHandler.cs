@@ -22,7 +22,7 @@ namespace Course.Assessment.Order.Application.Order.CreateOrder
             if (response == null)
                 return Result.Failure<OrderDetailRepsonse>(Error.NullValue);
 
-            return Result.Success(new OrderDetailRepsonse(response!.PaymentReference, response!.Status));
+            return Result.Success(new OrderDetailRepsonse(response!.PaymentReference, response!.Status, response.Status.ToString()));
         }
     }
 }
