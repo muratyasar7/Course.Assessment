@@ -7,6 +7,7 @@
 		<UserSecretsId>8c9de42c-829e-44b7-898d-8050b7b56498</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+		<DockerfileContext>..\..\..</DockerfileContext>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -16,9 +17,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Course.Assessment.Payment.Application\Course.Assessment.Payment.Application.csproj" />
-		<ProjectReference Include="..\Course.Assessment.Payment.Infrastructure\Course.Assessment.Payment.Infrastructure.csproj" />
-		<ProjectReference Include="..\Course.Assessment.ServiceDefaults\Course.Assessment.ServiceDefaults.csproj" />
+	  <ProjectReference Include="..\..\Aspire\Course.Assessment.ServiceDefaults\Course.Assessment.ServiceDefaults.csproj" />
+	  <ProjectReference Include="..\Course.Assessment.Payment.Application\Course.Assessment.Payment.Application.csproj" />
+	  <ProjectReference Include="..\Course.Assessment.Payment.Infrastructure\Course.Assessment.Payment.Infrastructure.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="QuartzTables.sql">

@@ -35,6 +35,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        AddRedis(services,configuration);
         var queueSystem = configuration.GetSection("QueueSystem").Value;
         switch (queueSystem)
         {
@@ -143,7 +144,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
     }
 
-    private static void AddRedisConsumerDependecies(IServiceCollection services, IConfiguration configuration)
+    private static void AddRedis(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
@@ -151,6 +152,10 @@ public static class DependencyInjection
                             throw new ArgumentNullException(nameof(configuration));
             return ConnectionMultiplexer.Connect(redisConn);
         });
+    }
+
+    private static void AddRedisConsumerDependecies(IServiceCollection services, IConfiguration configuration)
+    {
         services.AddScoped(typeof(IMessageConsumer<>), typeof(RedisStreamConsumer<>));
     }
 

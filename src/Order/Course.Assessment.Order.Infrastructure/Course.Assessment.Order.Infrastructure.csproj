@@ -9,6 +9,6 @@
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Course.Assessment.Order.Application\Course.Assessment.Order.Application.csproj" />
+    <ProjectReference Include="..\..\Order\Course.Assessment.Order.Application\Course.Assessment.Order.Application.csproj" />
   </ItemGroup>
 </Project>

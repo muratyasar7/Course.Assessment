@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Course.Assessment.Payment.API\Course.Assessment.Payment.API.csproj" />
-    <ProjectReference Include="..\Course.Assessment.Order.API\Course.Assessment.Order.API.csproj" />
+    <ProjectReference Include="..\..\Order\Course.Assessment.Order.API\Course.Assessment.Order.API.csproj" />
+    <ProjectReference Include="..\..\Payment\Course.Assessment.Payment.API\Course.Assessment.Payment.API.csproj" />
   </ItemGroup>
 
 </Project>
