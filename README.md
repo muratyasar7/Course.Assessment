@@ -1,53 +1,51 @@
 # Course.Assessment
 
-**Course.Assessment**, .NET (C#) ile geliştirilmiş bir değerlendirme/sınav uygulamasıdır. Bu proje, belirli kurs değerlendirme gereksinimlerini karşılamak üzere tasarlanmış olup Docker ve .NET ekosistemi ile entegre çalışır.
+**Course.Assessment**, .NET (C#) ile geliştirilmiş bir kurs ödevi için yapılmış bir uygulamadır. Bu proje, kurs değerlendirme gereksinimlerini karşılamak amacıyla hazırlanmış olup Docker ve .NET ekosistemi ile entegre çalışır.
+
+---
 
 ## 📌 İçindekiler
 
-- [Genel Bakış](#genel-bakış)  
-- [Özellikler](#özellikler)  
-- [Teknolojiler](#teknolojiler)  
-- [Kurulum & Çalıştırma](#kurulum--çalıştırma)  
-  - [Gerekli Yazılımlar](#gerekli-yazılımlar)  
-  - [Proje Yapılandırması](#proje-yapılandırması)  
-  - [Docker ile Çalıştırma](#docker-ile-çalıştırma)  
-- [Kullanım](#kullanım)  
-- [Katkıda Bulunma](#katkıda-bulunma)  
-- [Lisans](#lisans)  
+- [Genel Bakış](#-genel-bakış)  
+- [Özellikler](#-özellikler)  
+- [Teknolojiler](#-teknolojiler)  
+- [Kurulum & Çalıştırma](#-kurulum--çalıştırma)  
+  - [Gerekli Yazılımlar](#-gerekli-yazılımlar)  
+  - [Proje Yapılandırması](#-proje-yapılandırması)  
 
 ---
 
 ## 🧠 Genel Bakış
 
-Bu proje, eğitim süreçlerinde **öğrenci değerlendirme** modüllerini yönetmek ve otomatikleştirmek amacıyla geliştirilmiştir.  
-Kod tabanı .NET ile yazılmış olup backend servisler, API ve gerekli iş mantığını içerir. :contentReference[oaicite:1]{index=1}
-
-> ⚠️ *Bu README örnek bir şablondur — uygulama detayları, ekran görüntüleri ve iş akışları proje özelliklerine göre özelleştirilmelidir.*
+Bu proje, kuyruk sistemlerini öğrenmek ve mikroservis mimarisine adapte olmak amacıyla hazırlanmıştır.  
+Kod tabanı .NET ile yazılmış olup backend servisler, API ve iş mantığını içerir. Proje, **DDD**, **Clean Architecture** ve **Event Driven Design** prensiplerine uygun olarak geliştirilmiştir.
 
 ---
 
 ## ✨ Özellikler
 
 - .NET (C#) tabanlı backend uygulaması  
-- RESTful API uç noktaları (Varsa)  
+- RESTful API endpoints  
 - Docker destekli çalışma ortamı  
-- Değerlendirme/sınav yönetimi  
-- Geliştirmeye uygun açık mimari
-
-> Projedeki işlevsel özellikleri buraya özel olarak listeleyebilirsin (örneğin öğrenci/puan yönetimi, raporlama, testler vb.).
+- Aspire ile entegre çalışabilir  
+- DDD ve Clean Arhitecture'a uygun tasarım  
+- Kolayca genişletilebilir ve geliştirilebilir açık mimari  
 
 ---
 
 ## 🛠️ Teknolojiler
 
-Bu projede başlıca kullanılan teknolojiler:
-
 | Teknoloji | Açıklama |
 |-----------|-----------|
 | .NET / C# | Uygulama dili ve framework |
-| Docker | Konteynerleşme |
-| (Opsiyonel) Entity Framework | ORM |
-| (Opsiyonel) SQL Server / PostgreSQL | Veri deposu |
+| RedisStreams | Kuyruk sistemi |
+| Kafka | Kuyruk sistemi |
+| RabbitMQ | Kuyruk sistemi |
+| Docker | Containerization |
+| Aspire | Containerization ve çalıştırma |
+| Entity Framework Core | ORM (Object-Relational Mapping) |
+| PostgreSQL | Veri tabanı |
+| Quartz | Delayed queue ve zamanlanmış görevler |
 
 ---
 
@@ -55,14 +53,21 @@ Bu projede başlıca kullanılan teknolojiler:
 
 ### 📎 Gerekli Yazılımlar
 
-Projeyi localde çalıştırmak için aşağıdaki araçlar gereklidir:
-
-- [.NET SDK (örn. .NET 10)](https://dotnet.microsoft.com/)
-- [Docker](https://www.docker.com/)
+- [.NET SDK (.NET 10)](https://dotnet.microsoft.com/)  
+- [.NET Aspire SDK](https://aspire.dev/get-started/aspire-sdk/)  
+- [Docker](https://www.docker.com/)  
 
 ### 📂 Proje Yapılandırması
 
-1. Repo klonla:
+1. Docker:
    ```bash
    git clone https://github.com/muratyasar7/Course.Assessment.git
    cd Course.Assessment
+   docker-compose up -d
+2. Aspire
+   ```bash
+    git clone https://github.com/muratyasar7/Course.Assessment.git
+    cd  Course.Assessment/src/Aspire/Course.Assessment.AppHost
+    dotnet run
+
+
