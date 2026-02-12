@@ -17,13 +17,13 @@ namespace Course.Assessment.Order.API.Endpoints
         public static async Task<IResult> CreateOrder(CreateOrderRequest request, ISender sender, CancellationToken cancellationToken)
         {
             var command = new CreateOrderCommand(request);
-            var result = await sender.Send(command);
+            var result = await sender.Send(command, cancellationToken);
             return Results.Ok(result);
         }
         public static async Task<IResult> CancelOrder([FromRoute] Guid orderId, ISender sender, CancellationToken cancellationToken)
         {
             var command = new CancelOrderCommand(orderId);
-            var result = await sender.Send(command);
+            var result = await sender.Send(command, cancellationToken);
             return Results.Ok();
         }
     }
