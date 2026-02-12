@@ -12,6 +12,7 @@
 - [Kurulum & Çalıştırma](#-kurulum--çalıştırma)  
   - [Gerekli Yazılımlar](#-gerekli-yazılımlar)  
   - [Proje Yapılandırması](#-proje-yapılandırması)  
+  - [Config Yapılandırması](#-config-yapilandirması)  
 
 ---
 
@@ -26,6 +27,7 @@ Kod tabanı .NET ile yazılmış olup backend servisler, API ve iş mantığın�
 
 - .NET (C#) tabanlı backend uygulaması  
 - RESTful API endpoints  
+- Minimal Apis
 - Docker destekli çalışma ortamı  
 - Aspire ile entegre çalışabilir  
 - DDD ve Clean Arhitecture'a uygun tasarım  
@@ -70,4 +72,15 @@ Kod tabanı .NET ile yazılmış olup backend servisler, API ve iş mantığın�
     cd  Course.Assessment/src/Aspire/Course.Assessment.AppHost
     dotnet run
 
+### ⚙️ Config Yapılandırması
+Proje 3 farklı kuyruk sisteminde de çalışacak şekilde ayarlanmıştır. Bir tanesi seçilmelidir. Dockerda environment variable olarak, Aspire'da da appsettings içine verilmesi gerekmektedir. **QueueSystem** key ile setlenmesi gerekmektedir. Sadece Docker ile çalıştığında Kafka consumerda bir sorun var. Bu düzeltilecektir. 
+1. Docker:
+   ```bash
+    QueueSystem: RabbitMq  # RabbitMq, Kafka, RedisStreams
+    Environment Variable olarak verilmesi gerekmektedir
+2. Aspire
+   ```bash
+   "QueueSystem": "Kafka" // RabbitMq, Kafka, RedisStreams
+   Appsettings Json içinde verilmesi gerekmektedir 
 
+Başka bir ayar yapılmasına gerek yoktur. Db otomatik oluşacaktır. 
