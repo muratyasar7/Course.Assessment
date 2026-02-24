@@ -24,7 +24,7 @@ namespace Course.Assessment.Order.Application.Order.CancelOrder
 
         public async Task Handle(OrderCanceledDomainEvent notification, CancellationToken cancellationToken)
         {
-            var orderCreatedIntegrationEvent = new OrderCanceledIntegrationEvent(
+            var orderCanceledIntegrationEvent = new OrderCanceledIntegrationEvent(
                             notification.OrderId,
                             Guid.NewGuid(),
                             nameof(OrderCanceledIntegrationEvent),
@@ -32,9 +32,9 @@ namespace Course.Assessment.Order.Application.Order.CancelOrder
             _dbContext.OutboxMessages.Add(
                 OutboxMessageEntity.Create(
                     _dateTimeProvider.UtcNow,
-                    orderCreatedIntegrationEvent.GetType().AssemblyQualifiedName!,
+                    orderCanceledIntegrationEvent.GetType().AssemblyQualifiedName!,
                     JsonSerializer.Serialize(
-                        orderCreatedIntegrationEvent
+                        orderCanceledIntegrationEvent
                     )
                 ));
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -13,9 +13,12 @@
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.1.0" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.1.0" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.1.0" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="13.1.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Agent.API\Agent.API.csproj" />
+    <ProjectReference Include="..\..\..\..\Agent.Worker\Agent.Worker.csproj" />
     <ProjectReference Include="..\..\Order\Course.Assessment.Order.API\Course.Assessment.Order.API.csproj" />
     <ProjectReference Include="..\..\Payment\Course.Assessment.Payment.API\Course.Assessment.Payment.API.csproj" />
   </ItemGroup>

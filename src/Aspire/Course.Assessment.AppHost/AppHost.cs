@@ -29,6 +29,27 @@ if (redis == null)
         .WithHttpEndpoint(port: 5540, targetPort: 5540)
         .WithReference(redis);
 }
+
+// Ollama – Local LLM runtime
+var ollama = builder
+    .AddOllama("ollama", 11434)
+    .WithDataVolume()
+    .AddModel("llama3");
+// Vector memory (şimdilik Redis)
+var memory = builder.AddRedis("agent-memory");
+
+//
+// 2️⃣ Agent runtime components
+//
+
+// Indexer Worker (codebase tarar, memory’ye yazar)
+builder.AddProject<Projects.Agent_Worker>("agent-worker")
+       .WithReference(memory);
+
+// Agent API (soru-cevap, reasoning)
+builder.AddProject<Projects.Agent_API>("agent-service")
+       .WithReference(ollama)
+       .WithReference(memory);
 var postgres = builder.AddPostgres("Database").WithPgAdmin().WithDataVolume();
 
 
