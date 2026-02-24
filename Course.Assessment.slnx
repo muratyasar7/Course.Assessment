@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/Agent/">
+    <Project Path="../Agent.API/Agent.API.csproj" />
+    <Project Path="../Agent.Core/Agent.Core.csproj" Id="d77e2422-ae0f-4b86-a2f2-310c4711b085" />
+    <Project Path="../Agent.Indexer/Agent.Indexer.csproj" Id="a06823c6-3f4a-4b4e-8d7b-edca4a88313b" />
+    <Project Path="../Agent.Worker/Agent.Worker.csproj" />
+  </Folder>
   <Folder Name="/Aspire/">
     <Project Path="src/Aspire/Course.Assessment.AppHost/Course.Assessment.AppHost.csproj" />
     <Project Path="src/Aspire/Course.Assessment.ServiceDefaults/Course.Assessment.ServiceDefaults.csproj" />
